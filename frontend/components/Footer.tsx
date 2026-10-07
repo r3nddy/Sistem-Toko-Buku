@@ -97,7 +97,7 @@ export default function Footer() {
 
           {/* Links Column 1 */}
           <div>
-            <h5 className="font-bold text-gray-900 mb-3 text-sm">Produk Gramedia</h5>
+            <h5 className="font-bold text-gray-900 mb-3 text-sm">Produk InforBook</h5>
             <ul className="space-y-2 text-gray-500">
               <li><Link href="#katalog" className="hover:text-[#0052cc]">Buku & E-book</Link></li>
               <li><Link href="#katalog" className="hover:text-[#0052cc]">Alat Tulis & Kantor</Link></li>
@@ -123,7 +123,7 @@ export default function Footer() {
 
           {/* Links Column 3 */}
           <div>
-            <h5 className="font-bold text-gray-900 mb-3 text-sm">Tentang Gramedia</h5>
+            <h5 className="font-bold text-gray-900 mb-3 text-sm">Tentang InforBook</h5>
             <ul className="space-y-2 text-gray-500">
               <li><Link href="#tentang" className="hover:text-[#0052cc]">Profil Perusahaan</Link></li>
               <li><Link href="#karir" className="hover:text-[#0052cc]">Karir & Rekrutmen</Link></li>
@@ -136,7 +136,7 @@ export default function Footer() {
 
         {/* Copyright */}
         <div className="mt-10 pt-6 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between text-gray-400 gap-4">
-          <p>© 2026 PT Gramedia Asri Media. Hak Cipta Dilindungi.</p>
+          <p>© 2026 InforBook Media. Hak Cipta Dilindungi.</p>
           <div className="flex items-center gap-4 text-xs">
             <span>Indonesia</span>
             <span>•</span>

@@ -109,13 +109,13 @@ export default function BookDetailModal({
                       />
                     ) : (
                       <div className="w-full h-full bg-gradient-to-br from-blue-900 to-indigo-950 text-white p-4 flex flex-col justify-between">
-                        <span className="text-[10px] font-bold tracking-widest text-amber-300">GRAMEDIA</span>
+                        <span className="text-[10px] font-bold tracking-widest text-amber-300">INFORBOOK</span>
                         <p className="text-sm font-bold line-clamp-3">{product.title}</p>
                       </div>
                     )}
                   </div>
                   <span className="mt-3 text-[11px] font-medium text-gray-500">
-                    Penerbit Resmi Gramedia
+                    Penerbit Resmi InforBook
                   </span>
                 </div>
 
@@ -196,7 +196,7 @@ export default function BookDetailModal({
                     <h4 className="text-xs font-bold text-gray-800 mb-1">Deskripsi Buku</h4>
                     <p className="text-xs text-gray-600 leading-relaxed max-h-24 overflow-y-auto pr-1">
                       {(product as any).description ||
-                        "Buku pilihan berkualitas tinggi dari toko Gramedia. Cocok untuk koleksi pribadi, referensi studi, maupun hadiah bermakna."}
+                        "Buku pilihan berkualitas tinggi dari toko InforBook. Cocok untuk koleksi pribadi, referensi studi, maupun hadiah bermakna."}
                     </p>
                   </div>
                 </div>

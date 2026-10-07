@@ -52,7 +52,7 @@ export default function DashboardPage() {
 
   const handleRefresh = () => {
     loadAllData().then(() => {
-      toast.success("Dashboard Gramedia berhasil diperbarui");
+      toast.success("Dashboard InforBook berhasil diperbarui");
     });
   };
 
@@ -63,7 +63,7 @@ export default function DashboardPage() {
         <div>
           <div className="flex items-center gap-2 mb-1">
             <span className="bg-white/15 text-white text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider">
-              Gramedia Storefront Admin
+              InforBook Storefront Admin
             </span>
           </div>
           <h1 className="text-2xl font-extrabold tracking-tight text-white">
@@ -177,7 +177,7 @@ export default function DashboardPage() {
 
       {/* 3. Main Content: Grid Split (Daftar Pesanan & Stok Alert) */}
       <div className="grid gap-6 lg:grid-cols-3">
-        {/* Left 2 Cols: Pesanan Terbaru Gramedia */}
+        {/* Left 2 Cols: Pesanan Terbaru InforBook */}
         <div className="lg:col-span-2 space-y-6">
           <Card className="border-[var(--border)] bg-[var(--surface)] rounded-xl shadow-[var(--shadow-card)]">
             <CardHeader className="flex flex-row items-center justify-between pb-4 border-b border-[var(--border)]">
@@ -186,7 +186,7 @@ export default function DashboardPage() {
                   Pesanan Terbaru
                 </CardTitle>
                 <CardDescription className="text-xs text-[var(--muted-foreground)] mt-0.5">
-                  Transaksi belanja terbaru dari website Gramedia Store
+                  Transaksi belanja terbaru dari website InforBook Store
                 </CardDescription>
               </div>
               <Button
@@ -300,7 +300,7 @@ export default function DashboardPage() {
             </CardContent>
           </Card>
 
-          {/* Navigasi Cepat Admin Gramedia */}
+          {/* Navigasi Cepat Admin InforBook */}
           <Card className="border-[var(--border)] bg-[var(--surface)] rounded-xl shadow-[var(--shadow-card)] p-5 space-y-3">
             <h3 className="text-xs font-bold text-[var(--muted-foreground)] uppercase tracking-wider">
               Akses Cepat Admin

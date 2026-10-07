@@ -72,7 +72,7 @@ export default function AdminSettingsPage() {
                 </div>
                 <div className="space-y-1">
                   <label className="font-semibold text-slate-700 dark:text-slate-300">Alamat Gudang Utama</label>
-                  <Input defaultValue="Gedung Kompas Gramedia, Jl. Palmerah Barat No. 29-37, Jakarta Pusat 10270" />
+                  <Input defaultValue="Gedung InforBook Center, Jl. Palmerah Barat No. 29-37, Jakarta Pusat 10270" />
                 </div>
                 <div className="space-y-1">
                   <label className="font-semibold text-slate-700 dark:text-slate-300">Nomor WhatsApp CS</label>
