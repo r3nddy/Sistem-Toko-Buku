@@ -101,20 +101,20 @@ export function AppSidebar({
     <div className="flex h-full flex-col justify-between overflow-hidden">
       {/* Header Logo */}
       <div>
-        <div className="flex h-16 items-center justify-between px-4 border-b border-[var(--border)]">
+        <div className="flex h-16 items-center justify-between px-4 border-b border-slate-200">
           <Link
             href="/admin/dashboard"
-            className="flex items-center gap-2 shrink-0 font-bold text-[var(--foreground)]"
+            className="flex items-center gap-2 shrink-0 font-bold text-slate-900"
           >
-            <div className="w-9 h-9 rounded-lg bg-[var(--primary)] flex items-center justify-center text-[var(--primary-foreground)] font-extrabold text-xl shadow-xs">
+            <div className="w-9 h-9 rounded-lg bg-blue-600 flex items-center justify-center text-white font-extrabold text-xl shadow-xs">
               G
             </div>
             {!collapsed && (
               <div className="flex flex-col leading-tight">
-                <span className="text-lg font-extrabold tracking-tight text-[var(--primary)]">
+                <span className="text-lg font-extrabold tracking-tight text-blue-600">
                   {siteConfig.brandName}
                 </span>
-                <span className="text-[10px] text-[var(--muted-foreground)] font-medium tracking-wider uppercase">
+                <span className="text-[10px] text-slate-500 font-medium tracking-wider uppercase">
                   Admin Dashboard
                 </span>
               </div>
@@ -122,7 +122,7 @@ export function AppSidebar({
           </Link>
           <button
             onClick={onToggleCollapse}
-            className="hidden md:flex h-7 w-7 items-center justify-center rounded-md text-[var(--muted-foreground)] hover:bg-[var(--surface-muted)] hover:text-[var(--foreground)] cursor-pointer"
+            className="hidden md:flex h-7 w-7 items-center justify-center rounded-md text-slate-500 hover:bg-slate-100 hover:text-slate-900 cursor-pointer"
             title={collapsed ? "Buka Sidebar" : "Ciutkan Sidebar"}
           >
             {collapsed ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
@@ -134,7 +134,7 @@ export function AppSidebar({
           {navGroups.map((group) => (
             <div key={group.label} className="space-y-1">
               {!collapsed && (
-                <p className="px-3 text-[11px] font-semibold uppercase tracking-wider text-[var(--muted-foreground)]">
+                <p className="px-3 text-[11px] font-semibold uppercase tracking-wider text-slate-400">
                   {group.label}
                 </p>
               )}
@@ -151,16 +151,16 @@ export function AppSidebar({
                     className={cn(
                       "flex items-center gap-3 rounded-lg px-3 py-2 text-xs font-medium transition-all group relative border-l-4",
                       isActive
-                        ? "bg-[var(--primary-soft)] text-[var(--primary)] font-semibold border-[var(--primary)]"
-                        : "border-transparent text-[var(--foreground)] hover:bg-[var(--surface-muted)]"
+                        ? "bg-blue-50 text-blue-700 font-semibold border-blue-600 shadow-xs"
+                        : "border-transparent text-slate-700 hover:bg-slate-100 hover:text-slate-900"
                     )}
                   >
                     <Icon
                       className={cn(
                         "h-4 w-4 shrink-0 transition-colors",
                         isActive
-                          ? "text-[var(--primary)]"
-                          : "text-[var(--muted-foreground)] group-hover:text-[var(--foreground)]"
+                          ? "text-blue-600"
+                          : "text-slate-400 group-hover:text-slate-700"
                       )}
                     />
                     {!collapsed && (
@@ -171,8 +171,8 @@ export function AppSidebar({
                         className={cn(
                           "ml-auto text-[10px] font-bold px-1.5 py-0.5 rounded-full",
                           typeof item.badge === "string"
-                            ? "bg-[var(--danger-soft)] text-[var(--danger)]"
-                            : "bg-[var(--primary)] text-[var(--primary-foreground)]"
+                            ? "bg-rose-100 text-rose-700 border border-rose-200"
+                            : "bg-blue-600 text-white"
                         )}
                       >
                         {item.badge}
@@ -187,59 +187,59 @@ export function AppSidebar({
       </div>
 
       {/* Footer User Profile */}
-      <div className="border-t border-[var(--border)] p-3">
+      <div className="border-t border-slate-200 p-3 bg-white">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <button className="flex w-full items-center gap-3 rounded-lg p-2 text-left hover:bg-[var(--surface-muted)] cursor-pointer transition-colors">
+            <button className="flex w-full items-center gap-3 rounded-lg p-2 text-left hover:bg-slate-100 cursor-pointer transition-colors">
               <Avatar className="h-8 w-8 rounded-lg">
                 <AvatarImage src={siteConfig.adminUser.avatar} alt={siteConfig.adminUser.name} />
-                <AvatarFallback className="rounded-lg bg-[var(--primary-soft)] text-[var(--primary)] text-xs font-bold">
+                <AvatarFallback className="rounded-lg bg-blue-100 text-blue-700 text-xs font-bold">
                   RP
                 </AvatarFallback>
               </Avatar>
               {!collapsed && (
                 <>
                   <div className="flex flex-col flex-1 min-w-0">
-                    <span className="truncate text-xs font-semibold text-[var(--foreground)]">
+                    <span className="truncate text-xs font-semibold text-slate-900">
                       {siteConfig.adminUser.name}
                     </span>
-                    <span className="truncate text-[10px] text-[var(--muted-foreground)]">
+                    <span className="truncate text-[10px] text-slate-500">
                       {siteConfig.adminUser.email}
                     </span>
                   </div>
-                  <ChevronDown className="h-4 w-4 text-[var(--muted-foreground)] shrink-0" />
+                  <ChevronDown className="h-4 w-4 text-slate-400 shrink-0" />
                 </>
               )}
             </button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-56 mb-2">
+          <DropdownMenuContent align="end" className="w-56 mb-2 bg-white text-slate-800 border-slate-200 shadow-lg">
             <DropdownMenuLabel className="font-normal">
               <div className="flex flex-col space-y-1">
-                <p className="text-xs font-semibold">{siteConfig.adminUser.name}</p>
+                <p className="text-xs font-semibold text-slate-900">{siteConfig.adminUser.name}</p>
                 <p className="text-[10px] text-slate-500">{siteConfig.adminUser.role}</p>
               </div>
             </DropdownMenuLabel>
-            <DropdownMenuSeparator />
+            <DropdownMenuSeparator className="bg-slate-100" />
             <DropdownMenuItem asChild>
-              <Link href="/admin/pengaturan" className="flex items-center gap-2">
-                <User className="h-4 w-4" />
+              <Link href="/admin/pengaturan" className="flex items-center gap-2 text-xs text-slate-700 hover:bg-slate-100 cursor-pointer">
+                <User className="h-4 w-4 text-slate-500" />
                 <span>Profil Akun</span>
               </Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
-              <Link href="/admin/pengaturan" className="flex items-center gap-2">
-                <Settings className="h-4 w-4" />
+              <Link href="/admin/pengaturan" className="flex items-center gap-2 text-xs text-slate-700 hover:bg-slate-100 cursor-pointer">
+                <Settings className="h-4 w-4 text-slate-500" />
                 <span>Pengaturan Sistem</span>
               </Link>
             </DropdownMenuItem>
-            <DropdownMenuSeparator />
+            <DropdownMenuSeparator className="bg-slate-100" />
             <DropdownMenuItem
-              className="text-red-600 focus:text-red-600 focus:bg-red-50 dark:focus:bg-red-950/50"
+              className="text-xs cursor-pointer text-rose-600 focus:text-rose-600 focus:bg-rose-50"
               onClick={() => {
                 alert("Simulasi Logout berhasil.")
               }}
             >
-              <LogOut className="h-4 w-4 mr-2" />
+              <LogOut className="h-4 w-4 mr-2 text-rose-500" />
               <span>Keluar</span>
             </DropdownMenuItem>
           </DropdownMenuContent>
@@ -253,7 +253,7 @@ export function AppSidebar({
       {/* Desktop Inset Sidebar */}
       <aside
         className={cn(
-          "hidden md:flex flex-col border-r border-[var(--border)] bg-[var(--surface)] transition-all duration-300 ease-in-out shrink-0 sticky top-0 h-screen",
+          "hidden md:flex flex-col border-r border-slate-200 bg-white transition-all duration-300 ease-in-out shrink-0 sticky top-0 h-screen",
           collapsed ? "w-16" : "w-64"
         )}
       >
@@ -271,7 +271,7 @@ export function AppSidebar({
       {/* Mobile Drawer */}
       <div
         className={cn(
-          "fixed inset-y-0 left-0 z-50 w-72 bg-[var(--surface)] border-r border-[var(--border)] shadow-xl transition-transform duration-300 ease-in-out md:hidden",
+          "fixed inset-y-0 left-0 z-50 w-72 bg-white border-r border-slate-200 shadow-xl transition-transform duration-300 ease-in-out md:hidden",
           mobileOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >

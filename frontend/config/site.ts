@@ -12,7 +12,7 @@ export const siteConfig = {
     role: "Super Admin",
     avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80",
   },
-  brandName: "Gramedia",
+  brandName: "InforBook",
   tagline: "Toko Buku Online Terbesar, Terlengkap dan Terpercaya di Indonesia",
   promoTags: [
     { label: "Buku Pilihan", href: "#katalog" },
@@ -22,10 +22,10 @@ export const siteConfig = {
     { label: "Voucher Diskon", href: "/admin/promo", isHighlight: true },
   ],
   socials: {
-    facebook: "https://facebook.com/gramediabooks",
-    twitter: "https://twitter.com/gramedia",
-    instagram: "https://instagram.com/gramedia",
-    tiktok: "https://tiktok.com/@gramedia",
+    facebook: "https://facebook.com/inforbook",
+    twitter: "https://twitter.com/inforbook",
+    instagram: "https://instagram.com/inforbook",
+    tiktok: "https://tiktok.com/@inforbook",
   },
   topBarLinks: [
     { label: "Tentang Kami", href: "#" },

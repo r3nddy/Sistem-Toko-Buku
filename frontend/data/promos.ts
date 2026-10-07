@@ -3,7 +3,7 @@ import { Promo } from "@/types"
 export const initialPromos: Promo[] = [
   {
     id: "prm-001",
-    name: "Pesta Literasi Gramedia 10.10",
+    name: "Pesta Literasi InforBook 10.10",
     code: "LITERASI10",
     type: "Persentase",
     discountValue: 20,

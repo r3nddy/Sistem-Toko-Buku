@@ -6,6 +6,9 @@ import { initialPromos } from "@/data/promos"
 import { Product, Order, Customer, Promo, KPICardData } from "@/types"
 import { getBooks } from "@/lib/api"
 import type { Book } from "@/lib/types"
+import { createClient } from "@/lib/supabase"
+
+const supabase = createClient()
 
 // In-memory store untuk fallback & data non-buku
 let productsStore: Product[] = [...initialProducts]
@@ -24,38 +27,74 @@ export interface CategorySalesItem {
   sales: number
 }
 
-// Product Service - Connected to Backend API (Supabase)
+// Product Service - Connected to Backend API & Supabase
 export const productService = {
   getAll: async (): Promise<Product[]> => {
     try {
       const pageData = await getBooks(1, "", 100)
       if (pageData && pageData.items && pageData.items.length > 0) {
-        return pageData.items.map((b: Book) => ({
-          id: b.id,
-          title: b.title,
-          author: b.author,
-          publisher: "Gramedia",
-          isbn: b.isbn,
-          category: "Fiksi" as ProductCategory,
-          type: "Buku",
-          language: "Indonesia",
-          pages: 250,
-          weight: 300,
-          normalPrice: typeof b.price === "number" ? b.price : parseFloat(b.price) || 85000,
-          discountPercent: 0,
-          finalPrice: typeof b.price === "number" ? b.price : parseFloat(b.price) || 85000,
-          stock: b.stock,
-          status: b.stock > 0 ? "Aktif" : "Habis",
-          description: b.description || "Deskripsi buku.",
-          coverUrl: b.cover_url || "",
-          rating: 4.8,
-          sold: b.stock * 3,
-          createdAt: b.created_at || new Date().toISOString().split("T")[0],
-          updatedAt: b.updated_at || new Date().toISOString().split("T")[0],
-        }))
+        return pageData.items.map((b: Book) => {
+          const normalPrice = typeof b.price === "number" ? b.price : parseFloat(b.price) || 85000
+          return {
+            id: b.id,
+            title: b.title,
+            author: b.author,
+            publisher: "InforBook",
+            isbn: b.isbn,
+            category: "Fiksi" as ProductCategory,
+            type: "Buku",
+            language: "Indonesia",
+            pages: 250,
+            weight: 300,
+            normalPrice,
+            discountPercent: 0,
+            finalPrice: normalPrice,
+            stock: b.stock,
+            status: b.stock > 0 ? "Aktif" : "Habis",
+            description: b.description || "Deskripsi buku.",
+            coverUrl: b.cover_url || "",
+            rating: 4.8,
+            sold: b.stock * 3,
+            createdAt: b.created_at || new Date().toISOString().split("T")[0],
+            updatedAt: b.updated_at || new Date().toISOString().split("T")[0],
+          }
+        })
       }
     } catch {
-      // Fallback jika backend offline
+      // Fallback direct Supabase
+      try {
+        const { data } = await supabase.from("books").select("*").order("created_at", { ascending: false })
+        if (data && data.length > 0) {
+          return data.map((b: any) => {
+            const normalPrice = typeof b.price === "number" ? b.price : parseFloat(b.price) || 85000
+            return {
+              id: b.id,
+              title: b.title,
+              author: b.author,
+              publisher: "InforBook",
+              isbn: b.isbn,
+              category: "Fiksi" as ProductCategory,
+              type: "Buku",
+              language: "Indonesia",
+              pages: 250,
+              weight: b.weight_gram || 300,
+              normalPrice,
+              discountPercent: 0,
+              finalPrice: normalPrice,
+              stock: b.stock,
+              status: b.stock > 0 ? "Aktif" : "Habis",
+              description: b.description || "Deskripsi buku.",
+              coverUrl: b.cover_url || "",
+              rating: 4.8,
+              sold: b.stock * 3,
+              createdAt: b.created_at || new Date().toISOString().split("T")[0],
+              updatedAt: b.updated_at || new Date().toISOString().split("T")[0],
+            }
+          })
+        }
+      } catch {
+        // Fallback store
+      }
     }
     return [...productsStore]
   },
@@ -65,6 +104,42 @@ export const productService = {
   },
   create: async (data: Omit<Product, "id" | "createdAt" | "updatedAt" | "sold" | "finalPrice">): Promise<Product> => {
     const finalPrice = Math.round(data.normalPrice * (1 - (data.discountPercent || 0) / 100))
+
+    // Attempt Supabase insert
+    try {
+      const { data: created, error } = await supabase
+        .from("books")
+        .insert({
+          title: data.title,
+          author: data.author,
+          isbn: data.isbn,
+          description: data.description,
+          price: data.normalPrice,
+          stock: data.stock,
+          cover_url: data.coverUrl,
+        })
+        .select()
+        .single()
+
+      if (error) {
+        console.error("Supabase insert error:", error)
+        throw new Error(error.message || "Gagal menyimpan ke database Supabase.")
+      }
+
+      if (created) {
+        return {
+          ...data,
+          id: created.id,
+          sold: 0,
+          finalPrice,
+          createdAt: created.created_at || new Date().toISOString().split("T")[0],
+          updatedAt: created.updated_at || new Date().toISOString().split("T")[0],
+        }
+      }
+    } catch (err: any) {
+      if (err?.message) throw err
+    }
+
     const newProduct: Product = {
       ...data,
       id: `prod-${Date.now()}`,
@@ -77,25 +152,64 @@ export const productService = {
     return newProduct
   },
   update: async (id: string, data: Partial<Product>): Promise<Product> => {
-    const index = productsStore.findIndex((p) => p.id === id)
-    if (index === -1) throw new Error("Produk tidak ditemukan")
-    const existing = productsStore[index]
-    const normalPrice = data.normalPrice ?? existing.normalPrice
-    const discountPercent = data.discountPercent ?? existing.discountPercent
-    const finalPrice = Math.round(normalPrice * (1 - discountPercent / 100))
+    const normalPrice = data.normalPrice
+    const discountPercent = data.discountPercent
 
-    const updated: Product = {
-      ...existing,
-      ...data,
-      normalPrice,
-      discountPercent,
-      finalPrice,
-      updatedAt: new Date().toISOString().split("T")[0],
+    // Attempt Supabase update
+    try {
+      const updatePayload: Record<string, any> = {}
+      if (data.title !== undefined) updatePayload.title = data.title
+      if (data.author !== undefined) updatePayload.author = data.author
+      if (data.isbn !== undefined) updatePayload.isbn = data.isbn
+      if (data.description !== undefined) updatePayload.description = data.description
+      if (data.normalPrice !== undefined) updatePayload.price = data.normalPrice
+      if (data.stock !== undefined) updatePayload.stock = data.stock
+      if (data.coverUrl !== undefined) updatePayload.cover_url = data.coverUrl
+
+      if (Object.keys(updatePayload).length > 0) {
+        const { error } = await supabase.from("books").update(updatePayload).eq("id", id)
+        if (error) {
+          console.error("Supabase update error:", error)
+          throw new Error(error.message || "Gagal meng-update buku di Supabase.")
+        }
+      }
+    } catch (err: any) {
+      if (err?.message) throw err
     }
-    productsStore[index] = updated
-    return updated
+
+    const index = productsStore.findIndex((p) => p.id === id)
+    if (index !== -1) {
+      const existing = productsStore[index]
+      const np = normalPrice ?? existing.normalPrice
+      const dp = discountPercent ?? existing.discountPercent
+      const fp = Math.round(np * (1 - dp / 100))
+      const updated: Product = {
+        ...existing,
+        ...data,
+        normalPrice: np,
+        discountPercent: dp,
+        finalPrice: fp,
+        updatedAt: new Date().toISOString().split("T")[0],
+      }
+      productsStore[index] = updated
+      return updated
+    }
+
+    const fetched = await productService.getById(id)
+    if (!fetched) throw new Error("Produk tidak ditemukan")
+    return { ...fetched, ...data }
   },
   delete: async (id: string): Promise<boolean> => {
+    try {
+      const { error } = await supabase.from("books").delete().eq("id", id)
+      if (error) {
+        console.error("Supabase delete error:", error)
+        throw new Error(error.message || "Gagal menghapus buku di Supabase.")
+      }
+      return true
+    } catch (err: any) {
+      if (err?.message) throw err
+    }
     const prevLen = productsStore.length
     productsStore = productsStore.filter((p) => p.id !== id)
     return productsStore.length < prevLen

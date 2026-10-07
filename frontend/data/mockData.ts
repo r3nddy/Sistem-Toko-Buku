@@ -75,7 +75,7 @@ export const HERO_SIDE_BANNERS = [
   },
   {
     id: "sb2",
-    title: "Undian 56 Tahun Gramedia",
+    title: "Undian Ulang Tahun InforBook",
     desc: "Menangkan hadiah total ratusan juta rupiah",
     bgColor: "bg-gradient-to-br from-amber-600 to-orange-700",
     tag: "GEBYAR PRIZE",
