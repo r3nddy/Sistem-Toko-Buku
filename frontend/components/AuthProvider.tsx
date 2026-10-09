@@ -14,6 +14,7 @@ type AuthContextValue = {
   session: Session | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
+  signInWithOAuth: (provider: "github" | "google" | "apple") => Promise<void>;
   signUp: (email: string, password: string, name?: string) => Promise<{ user: any; session: Session | null }>;
   signOut: () => Promise<void>;
 };
@@ -58,6 +59,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (error) throw error;
   }
 
+  async function signInWithOAuth(provider: "github" | "google" | "apple") {
+    const redirectTo = `${window.location.origin}/auth/callback`;
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider,
+      options: {
+        redirectTo,
+      },
+    });
+    if (error) throw error;
+  }
+
   async function signUp(email: string, password: string, name?: string) {
     const { data, error } = await supabase.auth.signUp({
       email,
@@ -74,7 +86,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ session, loading, signIn, signUp, signOut }}>
+    <AuthContext.Provider value={{ session, loading, signIn, signInWithOAuth, signUp, signOut }}>
       {children}
     </AuthContext.Provider>
   );

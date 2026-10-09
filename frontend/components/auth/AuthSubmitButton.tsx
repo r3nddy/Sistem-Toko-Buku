@@ -23,12 +23,10 @@ export function AuthSubmitButton({
       type="submit"
       disabled={disabled || loading}
       className={cn(
-        "w-full h-11 px-6 rounded-xl font-semibold text-sm text-white transition-all duration-200",
-        "bg-gradient-to-r from-[#128C7E] to-[#25D366] hover:from-[#0E6C61] hover:to-[#20BD5A] active:scale-[0.99]",
-        "shadow-md shadow-emerald-700/20 hover:shadow-lg hover:shadow-emerald-700/30",
-        "flex items-center justify-center gap-2 cursor-pointer",
-        "focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-[#128C7E]/40 focus-visible:ring-offset-2",
-        "disabled:opacity-60 disabled:cursor-not-allowed disabled:pointer-events-none disabled:active:scale-100",
+        "w-full h-10 px-4 rounded-md font-semibold text-sm transition-all duration-150",
+        "bg-[var(--primary,#0052CC)] text-white hover:bg-[var(--primary-hover,#0041A3)] active:scale-[0.99]",
+        "shadow-xs flex items-center justify-center gap-2 cursor-pointer outline-hidden select-none",
+        "disabled:pointer-events-none disabled:opacity-50",
         className
       )}
       {...props}

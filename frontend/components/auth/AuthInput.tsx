@@ -17,15 +17,15 @@ export const AuthInput = forwardRef<HTMLInputElement, AuthInputProps>(
       <div className="space-y-1.5 w-full text-left">
         <label
           htmlFor={id}
-          className="block text-xs font-semibold uppercase tracking-wider text-[var(--foreground,#14201B)]"
+          className="block text-xs font-semibold text-foreground select-none"
         >
           {label}
-          {required && <span className="text-red-500 ml-1" aria-hidden="true">*</span>}
+          {required && <span className="text-destructive ml-1" aria-hidden="true">*</span>}
         </label>
 
-        <div className="relative rounded-xl shadow-2xs">
+        <div className="relative rounded-md">
           {icon && (
-            <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+            <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-muted-foreground [&_svg]:size-4">
               {icon}
             </div>
           )}
@@ -39,13 +39,13 @@ export const AuthInput = forwardRef<HTMLInputElement, AuthInputProps>(
             aria-invalid={!!error}
             aria-describedby={error ? `${id}-error` : hint ? `${id}-hint` : undefined}
             className={cn(
-              "w-full h-11 text-sm bg-[var(--surface-muted,#F6F8F6)] text-[var(--foreground,#14201B)] rounded-xl border transition-all duration-150 outline-none",
-              "placeholder:text-slate-400 placeholder:text-sm",
-              icon ? "pl-10 pr-3.5" : "px-3.5",
+              "w-full h-9 text-sm bg-background text-foreground rounded-md border shadow-xs transition-all outline-none select-none",
+              "placeholder:text-muted-foreground placeholder:text-sm",
+              icon ? "pl-9 pr-3" : "px-3",
               error
-                ? "border-red-400 bg-red-50/40 focus:border-red-500 focus:ring-3 focus:ring-red-500/15"
-                : "border-[var(--border,#E3EAE5)] hover:border-[var(--border-strong,#CBD7CF)] focus:border-[#128C7E] focus:bg-white focus:ring-3 focus:ring-[#128C7E]/15",
-              disabled && "opacity-60 cursor-not-allowed bg-slate-100",
+                ? "border-destructive bg-destructive/5 focus:ring-1 focus:ring-destructive"
+                : "border-input hover:bg-accent/50 focus:border-ring focus:bg-background focus:ring-1 focus:ring-ring",
+              disabled && "opacity-50 cursor-not-allowed bg-muted",
               className
             )}
             {...props}
