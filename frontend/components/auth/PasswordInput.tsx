@@ -9,24 +9,28 @@ export interface PasswordInputProps extends Omit<React.InputHTMLAttributes<HTMLI
   id: string;
   error?: string;
   hint?: string;
+  headerAction?: React.ReactNode;
 }
 
 export const PasswordInput = forwardRef<HTMLInputElement, PasswordInputProps>(
-  ({ label, id, error, hint, required, className, disabled, ...props }, ref) => {
+  ({ label, id, error, hint, required, className, disabled, headerAction, ...props }, ref) => {
     const [showPassword, setShowPassword] = useState(false);
 
     return (
       <div className="space-y-1.5 w-full text-left">
-        <label
-          htmlFor={id}
-          className="block text-xs font-semibold uppercase tracking-wider text-[var(--foreground,#14201B)]"
-        >
-          {label}
-          {required && <span className="text-red-500 ml-1" aria-hidden="true">*</span>}
-        </label>
+        <div className="flex items-center justify-between">
+          <label
+            htmlFor={id}
+            className="block text-xs font-semibold text-foreground select-none"
+          >
+            {label}
+            {required && <span className="text-destructive ml-1" aria-hidden="true">*</span>}
+          </label>
+          {headerAction}
+        </div>
 
-        <div className="relative rounded-xl shadow-2xs">
-          <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+        <div className="relative rounded-md">
+          <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-muted-foreground [&_svg]:size-4">
             <Lock className="w-4 h-4" />
           </div>
 
@@ -40,12 +44,12 @@ export const PasswordInput = forwardRef<HTMLInputElement, PasswordInputProps>(
             aria-invalid={!!error}
             aria-describedby={error ? `${id}-error` : hint ? `${id}-hint` : undefined}
             className={cn(
-              "w-full h-11 text-sm bg-[var(--surface-muted,#F6F8F6)] text-[var(--foreground,#14201B)] rounded-xl border transition-all duration-150 outline-none pl-10 pr-11",
-              "placeholder:text-slate-400 placeholder:text-sm",
+              "w-full h-9 text-sm bg-background text-foreground rounded-md border shadow-xs transition-all outline-none select-none pl-9 pr-9",
+              "placeholder:text-muted-foreground placeholder:text-sm",
               error
-                ? "border-red-400 bg-red-50/40 focus:border-red-500 focus:ring-3 focus:ring-red-500/15"
-                : "border-[var(--border,#E3EAE5)] hover:border-[var(--border-strong,#CBD7CF)] focus:border-[#128C7E] focus:bg-white focus:ring-3 focus:ring-[#128C7E]/15",
-              disabled && "opacity-60 cursor-not-allowed bg-slate-100",
+                ? "border-destructive bg-destructive/5 focus:ring-1 focus:ring-destructive"
+                : "border-input hover:bg-accent/50 focus:border-ring focus:bg-background focus:ring-1 focus:ring-ring",
+              disabled && "opacity-50 cursor-not-allowed bg-muted",
               className
             )}
             {...props}
@@ -57,7 +61,7 @@ export const PasswordInput = forwardRef<HTMLInputElement, PasswordInputProps>(
             onClick={() => setShowPassword(!showPassword)}
             disabled={disabled}
             aria-label={showPassword ? "Sembunyikan password" : "Tampilkan password"}
-            className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-700 transition-colors focus:outline-none focus:text-slate-900 cursor-pointer"
+            className="absolute inset-y-0 right-0 pr-2.5 flex items-center text-muted-foreground hover:text-foreground transition-colors focus:outline-none cursor-pointer"
           >
             {showPassword ? (
               <EyeOff className="w-4 h-4" />
