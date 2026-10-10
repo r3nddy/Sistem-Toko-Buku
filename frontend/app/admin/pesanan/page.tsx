@@ -37,6 +37,16 @@ import { formatRupiah, formatTanggalJam } from "@/lib/utils"
 import { toast } from "sonner"
 
 export default function AdminOrdersPage() {
+  // `useSearchParams` di App Router harus dibaca di dalam <Suspense> agar
+  // halaman bisa di-prerender. Komponen ini adalah versi ter-suspense-nya.
+  return (
+    <React.Suspense fallback={<div className="p-6 text-sm text-slate-500">Memuat data pesanan…</div>}>
+      <AdminOrdersContent />
+    </React.Suspense>
+  )
+}
+
+function AdminOrdersContent() {
   const searchParams = useSearchParams()
   const highlightId = searchParams.get("id")
 

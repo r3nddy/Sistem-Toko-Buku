@@ -1,23 +1,24 @@
-from typing import Annotated, List, Optional
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from typing import Annotated
+
+from fastapi import APIRouter, Depends, HTTPException, status
+
 from app.core.security import require_staff_or_admin, UserPayload
 from app.schemas.common import ApiResponse
-from app.schemas.promo import PromoCreate, PromoUpdate, PromoResponse
-from app.services.promo_service import promo_service
+from app.schemas.promo import PromoCreate, PromoResponse, PromoUpdate
+from app.services.promo_service import PromoNotFound, promo_service
 
-router = APIRouter(prefix="/promos", tags=["Voucher & Promo"])
+router = APIRouter(prefix="/promos", tags=["Promo"])
 
 
-@router.get("", response_model=ApiResponse[List[PromoResponse]])
+@router.get("", response_model=ApiResponse[list[PromoResponse]])
 async def list_promos(
-    status_filter: Optional[str] = Query(None, alias="status"),
-    current_user: Annotated[UserPayload, Depends(require_staff_or_admin)] = None,
+    current_user: Annotated[UserPayload, Depends(require_staff_or_admin)],
 ):
-    promos = promo_service.get_all(status_filter=status_filter)
+    """Seluruh promo (termasuk nonaktif & terjadwal) untuk halaman admin."""
     return ApiResponse(
         sukses=True,
-        pesan="Daftar voucher promo berhasil dimuat.",
-        data=promos,
+        pesan="Daftar promo berhasil dimuat.",
+        data=promo_service.get_all(),
     )
 
 
@@ -26,43 +27,49 @@ async def create_promo(
     payload: PromoCreate,
     current_user: Annotated[UserPayload, Depends(require_staff_or_admin)],
 ):
-    existing = promo_service.get_by_code(payload.code)
-    if existing:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Kode voucher '{payload.code}' sudah digunakan.",
-        )
-
     try:
-        new_promo = promo_service.create(payload)
-        return ApiResponse(
-            sukses=True,
-            pesan=f"Voucher promo '{payload.title}' berhasil dibuat.",
-            data=new_promo,
-        )
-    except Exception as e:
+        promo = promo_service.create(payload)
+    except Exception as exc:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Gagal membuat promo: {str(e)}",
+            detail=f"Gagal membuat promo: {exc}",
         )
+    return ApiResponse(sukses=True, pesan="Promo berhasil dibuat.", data=promo)
 
 
-@router.patch("/{promo_id}/toggle", response_model=ApiResponse[PromoResponse])
-async def toggle_promo_status(
+@router.patch("/{promo_id}", response_model=ApiResponse[PromoResponse])
+async def update_promo(
     promo_id: str,
-    is_active: bool = Query(..., description="Status aktifkan atau nonaktifkan voucher"),
-    current_user: Annotated[UserPayload, Depends(require_staff_or_admin)] = None,
+    payload: PromoUpdate,
+    current_user: Annotated[UserPayload, Depends(require_staff_or_admin)],
 ):
     try:
-        updated = promo_service.toggle_status(promo_id, is_active)
-        status_text = "diaktifkan" if is_active else "dinonaktifkan"
-        return ApiResponse(
-            sukses=True,
-            pesan=f"Voucher berhasil {status_text}.",
-            data=updated,
-        )
-    except Exception as e:
+        promo = promo_service.update(promo_id, payload)
+    except PromoNotFound as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc))
+    except ValueError as exc:
+        # Rentang tanggal tidak valid setelah patch.
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc))
+    except Exception as exc:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Gagal mengubah status voucher: {str(e)}",
+            detail=f"Gagal memperbarui promo: {exc}",
         )
+    return ApiResponse(sukses=True, pesan="Promo berhasil diperbarui.", data=promo)
+
+
+@router.delete("/{promo_id}", response_model=ApiResponse[dict])
+async def delete_promo(
+    promo_id: str,
+    current_user: Annotated[UserPayload, Depends(require_staff_or_admin)],
+):
+    try:
+        promo_service.delete(promo_id)
+    except PromoNotFound as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc))
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Gagal menghapus promo: {exc}",
+        )
+    return ApiResponse(sukses=True, pesan="Promo berhasil dihapus.", data={"id": promo_id})

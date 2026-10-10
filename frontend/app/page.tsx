@@ -74,6 +74,8 @@ export default function Home() {
     coverUrl: b.cover_url || "",
     category,
     type: "book",
+    // Stok nyata diteruskan supaya kartu produk & modal tidak menebak-nebak.
+    stock: b.stock,
   });
 
   // Real Supabase data mapped to storefront sections

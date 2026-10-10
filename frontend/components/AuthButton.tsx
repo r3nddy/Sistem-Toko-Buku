@@ -31,6 +31,12 @@ export default function AuthButton() {
   return (
     <div className="flex items-center gap-2">
       <Link
+        href="/orders"
+        className="inline-flex items-center justify-center px-3 py-1.5 text-xs font-semibold text-gray-600 hover:text-[#0052cc] hover:bg-blue-50 rounded-lg transition-colors"
+      >
+        Pesanan Saya
+      </Link>
+      <Link
         href="/admin/dashboard"
         className="inline-flex items-center justify-center px-3 py-1.5 text-xs font-semibold text-[var(--primary)] bg-[var(--primary-soft)] hover:opacity-90 rounded-lg transition-colors border border-[var(--primary)]/20"
       >

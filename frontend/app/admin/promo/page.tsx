@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { Tag, Plus, Check, Copy } from "lucide-react"
+import { Tag, Plus, Check, Copy, Trash2 } from "lucide-react"
 import { PageHeader } from "@/components/admin/PageHeader"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -17,8 +17,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { Promo, PromoType } from "@/types"
 import { promoService } from "@/lib/services"
+import type { Promo, PromoDiscountType } from "@/lib/types"
 import { formatRupiah, formatTanggal } from "@/lib/utils"
 import { toast } from "sonner"
 
@@ -31,38 +31,56 @@ export default function AdminPromosPage() {
   const [createOpen, setCreateOpen] = React.useState(false)
   const [name, setName] = React.useState("")
   const [code, setCode] = React.useState("")
-  const [type, setType] = React.useState<PromoType>("Persentase")
+  const [type, setType] = React.useState<PromoDiscountType>("Persentase")
   const [discountValue, setDiscountValue] = React.useState(15)
   const [minPurchase, setMinPurchase] = React.useState(100000)
+  const [endDate, setEndDate] = React.useState("")
   const [quota, setQuota] = React.useState(300)
 
   const loadData = React.useCallback(() => {
-    promoService.getAll().then((res) => {
-      setPromos(res)
-      setLoading(false)
-    })
+    promoService
+      .getAll()
+      .then(setPromos)
+      .catch(() => toast.error("Gagal memuat daftar promo"))
+      .finally(() => setLoading(false))
   }, [])
 
   React.useEffect(() => {
     let active = true
-    promoService.getAll().then((res) => {
-      if (active) {
-        setPromos(res)
-        setLoading(false)
-      }
-    })
+    promoService
+      .getAll()
+      .then((res) => {
+        if (active) setPromos(res)
+      })
+      .catch(() => {
+        if (active) toast.error("Gagal memuat daftar promo")
+      })
+      .finally(() => {
+        if (active) setLoading(false)
+      })
     return () => {
       active = false
     }
   }, [])
 
-  const handleToggle = async (id: string) => {
+  const handleToggle = async (prm: Promo) => {
     try {
-      const updated = await promoService.toggleActive(id)
-      toast.success(`Promo "${updated.name}" sekarang ${updated.isActive ? "Aktif" : "Nonaktif"}`)
+      const updated = await promoService.toggleActive(prm.id, !prm.is_active)
+      toast.success(`Promo "${updated.name}" sekarang ${updated.is_active ? "Aktif" : "Nonaktif"}`)
       loadData()
     } catch {
       toast.error("Gagal mengubah status promo")
+    }
+  }
+
+  const handleDelete = async (prm: Promo) => {
+    if (!window.confirm(`Hapus promo "${prm.name}" (${prm.code})?`)) return
+    try {
+      await promoService.delete(prm.id)
+      toast.success(`Promo "${prm.name}" dihapus`)
+      loadData()
+    } catch {
+      toast.error("Gagal menghapus promo")
     }
   }
 
@@ -80,17 +98,17 @@ export default function AdminPromosPage() {
       return
     }
     try {
+      const start = new Date().toISOString().split("T")[0]
       await promoService.create({
         name,
         code: code.toUpperCase(),
-        type,
-        discountValue,
-        minPurchase,
+        discount_type: type,
+        discount_value: discountValue,
+        min_purchase: minPurchase,
         quota,
-        startDate: new Date().toISOString().split("T")[0],
-        endDate: "2026-12-31",
-        isActive: true,
-        status: "Aktif",
+        is_active: true,
+        start_date: start,
+        end_date: endDate || start,
       })
       toast.success(`Kampanye promo "${name}" berhasil dibuat`)
       loadData()
@@ -133,24 +151,35 @@ export default function AdminPromosPage() {
             <Card
               key={prm.id}
               className={`relative overflow-hidden transition-all border-slate-200/80 dark:border-slate-800 ${
-                !prm.isActive ? "opacity-60 bg-slate-50 dark:bg-slate-950" : ""
+                !prm.is_active ? "opacity-60 bg-slate-50 dark:bg-slate-950" : ""
               }`}
             >
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between gap-2">
                   <div>
-                    <Badge variant={prm.isActive ? "success" : "secondary"} className="text-[10px]">
-                      {prm.type}
+                    <Badge variant={prm.is_active ? "success" : "secondary"} className="text-[10px]">
+                      {prm.status}
                     </Badge>
                     <CardTitle className="text-sm font-bold mt-1 text-slate-900 dark:text-slate-100">
                       {prm.name}
                     </CardTitle>
                   </div>
-                  <Switch
-                    checked={prm.isActive}
-                    onCheckedChange={() => handleToggle(prm.id)}
-                    title="Toggle Aktif / Nonaktif"
-                  />
+                  <div className="flex items-center gap-1">
+                    <Switch
+                      checked={prm.is_active}
+                      onCheckedChange={() => handleToggle(prm)}
+                      title="Toggle Aktif / Nonaktif"
+                    />
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-7 px-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-950 cursor-pointer"
+                      onClick={() => handleDelete(prm)}
+                      title="Hapus promo"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
                 </div>
               </CardHeader>
 
@@ -178,24 +207,24 @@ export default function AdminPromosPage() {
                   <div className="flex justify-between">
                     <span>Besar Diskon:</span>
                     <span className="font-bold text-slate-900 dark:text-slate-100">
-                      {prm.type === "Persentase" ? `${prm.discountValue}%` : formatRupiah(prm.discountValue)}
+                      {prm.discount_type === "Persentase" ? `${prm.discount_value}%` : formatRupiah(prm.discount_value)}
                     </span>
                   </div>
                   <div className="flex justify-between">
                     <span>Min. Belanja:</span>
-                    <span>{formatRupiah(prm.minPurchase)}</span>
+                    <span>{formatRupiah(prm.min_purchase)}</span>
                   </div>
                   <div className="flex justify-between">
                     <span>Penggunaan Kuota:</span>
                     <span className="font-semibold text-slate-800 dark:text-slate-200">
-                      {prm.usedCount} / {prm.quota} klaim
+                      {prm.used_count} / {prm.quota} klaim
                     </span>
                   </div>
                 </div>
 
                 <div className="pt-2 border-t border-slate-100 dark:border-slate-800 text-[11px] text-slate-400 flex justify-between">
                   <span>Periode:</span>
-                  <span>{formatTanggal(prm.startDate)} - {formatTanggal(prm.endDate)}</span>
+                  <span>{formatTanggal(prm.start_date)} - {formatTanggal(prm.end_date)}</span>
                 </div>
               </CardContent>
             </Card>
@@ -236,7 +265,7 @@ export default function AdminPromosPage() {
 
               <div className="space-y-1">
                 <label className="font-semibold text-slate-700 dark:text-slate-300">Tipe Promo *</label>
-                <Select value={type} onValueChange={(val) => setType(val as PromoType)}>
+                <Select value={type} onValueChange={(val) => setType(val as PromoDiscountType)}>
                   <SelectTrigger className="h-9 text-xs">
                     <SelectValue />
                   </SelectTrigger>
@@ -274,7 +303,18 @@ export default function AdminPromosPage() {
                   onChange={(e) => setQuota(Number(e.target.value))}
                 />
               </div>
+              <div className="space-y-1">
+                <label className="font-semibold text-slate-700 dark:text-slate-300">Berlaku Sampai *</label>
+                <Input
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                />
+              </div>
             </div>
+            <p className="text-[11px] text-slate-400">
+              Mulai berlaku hari ini. Kolom tanggal tersimpan sebagai DATE, bukan jam.
+            </p>
 
             <DialogFooter className="mt-4">
               <Button type="button" variant="outline" size="sm" onClick={() => setCreateOpen(false)}>

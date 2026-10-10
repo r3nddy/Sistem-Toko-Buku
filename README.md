@@ -64,17 +64,18 @@
    ```
 5. Buka di browser: `http://localhost:3000`
 
----
-
 ## 🗺️ Dokumentasi Rute Aplikasi
 
 ### 🌐 Storefront / Publik
 
-| Rute          | Komponen / Halaman        | Deskripsi                                                                                     |
-| :------------ | :------------------------ | :-------------------------------------------------------------------------------------------- |
-| `/`           | `app/page.tsx`            | Katalog utama toko buku (hero promo, daftar buku, filter kategori, search, keranjang belanja) |
-| `/login`      | `app/login/page.tsx`      | Autentikasi user & admin login via Supabase Auth                                              |
-| `/books/[id]` | `app/books/[id]/page.tsx` | Halaman detail informasi spesifik buku                                                        |
+| Rute           | Komponen / Halaman         | Deskripsi                                                                                     |
+| :------------- | :------------------------- | :-------------------------------------------------------------------------------------------- |
+| `/`            | `app/page.tsx`             | Katalog utama toko buku (hero promo, daftar buku, filter kategori, search, keranjang belanja) |
+| `/login`       | `app/login/page.tsx`       | Autentikasi user & admin login via Supabase Auth                                              |
+| `/books/[id]`  | `app/books/[id]/page.tsx`  | Halaman detail informasi spesifik buku                                                        |
+| `/checkout`    | `app/checkout/page.tsx`    | Form pengiriman, kurir, metode bayar, ringkasan, konfirmasi pesanan (perlu login)             |
+| `/orders`      | `app/orders/page.tsx`      | Daftar pesanan milik user yang sedang login                                                   |
+| `/orders/[id]` | `app/orders/[id]/page.tsx` | Detail pesanan, status pesanan & status pembayaran                                            |
 
 ---
 

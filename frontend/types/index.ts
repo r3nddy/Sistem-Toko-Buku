@@ -38,10 +38,12 @@ export interface Product {
 
 export type OrderStatus =
   | "Menunggu Pembayaran"
+  | "Dibayar"
   | "Diproses"
   | "Dikirim"
   | "Selesai"
   | "Batal"
+  | "Kedaluwarsa"
 
 export type PaymentMethod =
   | "BCA Virtual Account"
@@ -101,24 +103,9 @@ export interface Customer {
   status: "Aktif" | "Nonaktif"
 }
 
-export type PromoType = "Persentase" | "Potongan Tetap" | "Gratis Ongkir"
-export type PromoStatus = "Aktif" | "Jadwal" | "Kadaluarsa"
-
-export interface Promo {
-  id: string
-  name: string
-  code: string
-  type: PromoType
-  discountValue: number
-  minPurchase: number
-  maxDiscount?: number
-  quota: number
-  usedCount: number
-  startDate: string
-  endDate: string
-  isActive: boolean
-  status: PromoStatus
-}
+// Tipe Promo tinggal satu sumber: lihat `lib/types.ts` (mengikuti tabel
+// `promos` di Supabase, bukan lagi bentuk data mock).
+export type { Promo, PromoInput, PromoUpdate, PromoDiscountType, PromoStatus } from "@/lib/types"
 
 export interface KPICardData {
   title: string

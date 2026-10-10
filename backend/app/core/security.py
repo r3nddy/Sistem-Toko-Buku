@@ -1,4 +1,4 @@
-from typing import Annotated, Optional
+from typing import Annotated, Any, Optional
 import jwt
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
@@ -7,6 +7,52 @@ from pydantic import BaseModel
 from app.core.config import settings
 
 security = HTTPBearer(auto_error=False)
+
+# Supabase menandatangani access token dengan kunci asimetris (ES256/RS256) dan
+# menerbitkan public key-nya lewat JWKS. Projek ini sudah memakai model kunci
+# baru — `frontend/.env` berisi anon key `sb_publishable_...` dan JWT secret
+# legacy sudah tidak menandatangani token — sehingga verifikasi HS256 saja
+# menolak setiap token dengan
+# "The specified alg value is not allowed".
+# HS256 tetap dicoba sebagai jalur transisi; percobaan pertama saja yang
+# menghasilkan error, bukan gabungan keduanya.
+_JWKS_URL = f"{settings.SUPABASE_URL.rstrip('/')}/auth/v1/.well-known/jwks.json"
+_ASYMMETRIC_ALGORITHMS = ["ES256", "RS256"]
+
+_jwks_client: Optional[jwt.PyJWKClient] = None
+
+
+def _get_jwks_client() -> jwt.PyJWKClient:
+    global _jwks_client
+    if _jwks_client is None:
+        _jwks_client = jwt.PyJWKClient(_JWKS_URL)
+    return _jwks_client
+
+
+def _decode_token(token: str) -> dict[str, Any]:
+    """Verifikasi token Supabase: JWKS untuk alg asimetris, HS256 untuk token legacy.
+
+    `alg` dibaca dari header dulu (belum diverifikasi) supaya token HS256 tidak
+    memicu pengambilan JWKS sama sekali, dan supaya tiap jalur hanya menerima
+    keluarga algoritma yang cocok — bukan campuran yang bisa disalahgunakan.
+    """
+    alg = jwt.get_unverified_header(token).get("alg", "")
+
+    if alg in _ASYMMETRIC_ALGORITHMS:
+        key = _get_jwks_client().get_signing_key_from_jwt(token).key
+        return jwt.decode(
+            token,
+            key,
+            algorithms=_ASYMMETRIC_ALGORITHMS,
+            audience="authenticated",
+        )
+
+    return jwt.decode(
+        token,
+        settings.SUPABASE_JWT_SECRET,
+        algorithms=["HS256"],
+        audience="authenticated",
+    )
 
 
 class UserPayload(BaseModel):
@@ -29,13 +75,7 @@ async def get_current_user(
 
     token = credentials.credentials
     try:
-        # Supabase JWT signature validation with HMAC SHA256 using SUPABASE_JWT_SECRET
-        payload = jwt.decode(
-            token,
-            settings.SUPABASE_JWT_SECRET,
-            algorithms=["HS256"],
-            audience="authenticated",
-        )
+        payload = _decode_token(token)
         user_id: str = payload.get("sub", "")
         if not user_id:
             raise HTTPException(

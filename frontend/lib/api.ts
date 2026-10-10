@@ -1,8 +1,29 @@
-import type { Book, BookInput, BookPage, BookUpdate, CurrentUser, SpoilerLevel, AIReviewResponse } from "./types";
+import type {
+  Book,
+  BookInput,
+  BookPage,
+  BookUpdate,
+  CartItemAddInput,
+  CartMergeInput,
+  CartPayload,
+  CurrentUser,
+  Order,
+  OrderInput,
+  OrderPage,
+  OrderStatus,
+  Promo,
+  PromoInput,
+  PromoUpdate,
+  SpoilerLevel,
+  AIReviewResponse,
+} from "./types";
+import { supabase } from "./supabase";
 
 const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api/v1";
 
 type RequestOptions = RequestInit & { accessToken?: string };
+
+type ApiEnvelope<T> = { sukses: boolean; pesan: string; data: T };
 
 async function request<T>(path: string, init?: RequestOptions): Promise<T> {
   const { accessToken, headers, ...requestInit } = init ?? {};
@@ -42,6 +63,19 @@ export function getBook(id: string): Promise<Book> {
   return request<Book>(`/books/${encodeURIComponent(id)}`);
 }
 
+export type ShippingOption = {
+  id: string;
+  courier: string;
+  service: string;
+  fee: number;
+};
+
+/** Tarif pengiriman dari server — sumber kebenaran yang sama dipakai `POST /orders`. */
+export async function getShippingOptions(): Promise<ShippingOption[]> {
+  const res = await request<ApiEnvelope<ShippingOption[]>>("/shipping-options");
+  return res.data ?? [];
+}
+
 export function getCurrentUser(accessToken: string): Promise<CurrentUser> {
   return request<CurrentUser>("/me", { accessToken });
 }
@@ -70,6 +104,140 @@ export function getAIReview(
   return request<AIReviewResponse>(`/books/${encodeURIComponent(bookId)}/ai-review`, {
     method: "POST",
     body: JSON.stringify({ spoiler_level: spoilerLevel }),
+    accessToken,
+  });
+}
+
+export function createOrder(data: OrderInput, accessToken: string): Promise<ApiEnvelope<Order>> {
+  return request<ApiEnvelope<Order>>(`/orders`, { method: "POST", body: JSON.stringify(data), accessToken });
+}
+
+export function getOrder(id: string, accessToken: string): Promise<ApiEnvelope<Order>> {
+  return request<ApiEnvelope<Order>>(`/orders/${encodeURIComponent(id)}`, { accessToken });
+}
+
+export function getMyOrders(accessToken: string, page = 1, limit = 10): Promise<OrderPage> {
+  const params = new URLSearchParams({ page: String(page), limit: String(limit) });
+  return request<OrderPage>(`/orders?${params.toString()}`, { accessToken });
+}
+
+// Alias admin: endpoint yang sama, dengan limit besar untuk tabel admin.
+export function getOrders(accessToken: string, page = 1, limit = 100): Promise<OrderPage> {
+  return getMyOrders(accessToken, page, limit);
+}
+
+export function getOrderDetail(id: string, accessToken: string): Promise<ApiEnvelope<Order>> {
+  return getOrder(id, accessToken);
+}
+
+export function updateOrderStatus(
+  id: string,
+  status: OrderStatus,
+  accessToken: string,
+  trackingNumber?: string
+): Promise<ApiEnvelope<Record<string, unknown>>> {
+  return request<ApiEnvelope<Record<string, unknown>>>(`/orders/${encodeURIComponent(id)}/status`, {
+    method: "PATCH",
+    body: JSON.stringify({ status, tracking_number: trackingNumber ?? null }),
+    accessToken,
+  });
+}
+
+// --- Keranjang (server; selalu butuh token user) ---
+// Harga dan stok tidak pernah dikirim dari sini: server membacanya dari `books`
+// pada setiap permintaan, jadi angka yang ditampilkan tidak bisa basi.
+
+export function getCart(accessToken: string): Promise<ApiEnvelope<CartPayload>> {
+  return request<ApiEnvelope<CartPayload>>(`/cart`, { accessToken });
+}
+
+export function addCartItem(
+  data: CartItemAddInput,
+  accessToken: string
+): Promise<ApiEnvelope<CartPayload>> {
+  return request<ApiEnvelope<CartPayload>>(`/cart/items`, {
+    method: "POST",
+    body: JSON.stringify(data),
+    accessToken,
+  });
+}
+
+export function updateCartItem(
+  itemId: string,
+  quantity: number,
+  accessToken: string
+): Promise<ApiEnvelope<CartPayload>> {
+  return request<ApiEnvelope<CartPayload>>(`/cart/items/${encodeURIComponent(itemId)}`, {
+    method: "PATCH",
+    body: JSON.stringify({ quantity }),
+    accessToken,
+  });
+}
+
+export function removeCartItem(
+  itemId: string,
+  accessToken: string
+): Promise<ApiEnvelope<CartPayload>> {
+  return request<ApiEnvelope<CartPayload>>(`/cart/items/${encodeURIComponent(itemId)}`, {
+    method: "DELETE",
+    accessToken,
+  });
+}
+
+export function clearCartRequest(accessToken: string): Promise<ApiEnvelope<CartPayload>> {
+  return request<ApiEnvelope<CartPayload>>(`/cart`, { method: "DELETE", accessToken });
+}
+
+/** Gabungkan keranjang tamu (localStorage) setelah login. */
+export function mergeCart(
+  data: CartMergeInput,
+  accessToken: string
+): Promise<ApiEnvelope<CartPayload>> {
+  return request<ApiEnvelope<CartPayload>>(`/cart/merge`, {
+    method: "POST",
+    body: JSON.stringify(data),
+    accessToken,
+  });
+}
+
+/** Token sesi Supabase; `undefined` bila belum login. Dipakai layanan admin. */
+export async function getAccessToken(): Promise<string | undefined> {
+  const { data } = await supabase.auth.getSession();
+  return data.session?.access_token;
+}
+
+// --- Promo (khusus staff/admin; backend memverifikasi peran lewat token) ---
+
+export async function getPromos(): Promise<Promo[]> {
+  const accessToken = await getAccessToken();
+  const res = await request<ApiEnvelope<Promo[]>>("/promos", { accessToken });
+  return res.data ?? [];
+}
+
+export async function createPromo(data: PromoInput): Promise<Promo> {
+  const accessToken = await getAccessToken();
+  const res = await request<ApiEnvelope<Promo>>("/promos", {
+    method: "POST",
+    body: JSON.stringify(data),
+    accessToken,
+  });
+  return res.data;
+}
+
+export async function updatePromo(id: string, data: PromoUpdate): Promise<Promo> {
+  const accessToken = await getAccessToken();
+  const res = await request<ApiEnvelope<Promo>>(`/promos/${encodeURIComponent(id)}`, {
+    method: "PATCH",
+    body: JSON.stringify(data),
+    accessToken,
+  });
+  return res.data;
+}
+
+export async function deletePromo(id: string): Promise<void> {
+  const accessToken = await getAccessToken();
+  await request<ApiEnvelope<{ id: string }>>(`/promos/${encodeURIComponent(id)}`, {
+    method: "DELETE",
     accessToken,
   });
 }
