@@ -3,13 +3,12 @@ import { Product } from "@/data/mockData";
 export function formatRupiah(num: number | string) {
   const value = typeof num === "string" ? parseFloat(num) : num;
   if (isNaN(value)) return "Rp0";
-  // If price stored as small number ($/units), normalize to IDR roughly
-  const idr = value < 500 ? value * 15000 : value;
+  // Semua harga di database sudah dalam Rupiah; tidak ada konversi mata uang.
   return new Intl.NumberFormat("id-ID", {
     style: "currency",
     currency: "IDR",
     maximumFractionDigits: 0,
-  }).format(idr);
+  }).format(value);
 }
 
 interface ProductCardProps {

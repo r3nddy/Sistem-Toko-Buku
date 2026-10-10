@@ -3,8 +3,7 @@ from typing import Annotated, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from app.core.security import require_staff_or_admin, UserPayload
 from app.schemas.common import ApiResponse, PaginatedResponse, PaginationMeta
-from app.schemas.inventory import StockAdjustmentRequest, StockMovementResponse
-from app.schemas.product import ProductResponse
+from app.schemas.inventory import LowStockBookResponse, StockAdjustmentRequest, StockMovementResponse
 from app.services.inventory_service import inventory_service
 
 router = APIRouter(prefix="/inventory", tags=["Inventori & Stok"])
@@ -37,7 +36,7 @@ async def list_stock_movements(
     )
 
 
-@router.get("/low-stock", response_model=ApiResponse[list[ProductResponse]])
+@router.get("/low-stock", response_model=ApiResponse[list[LowStockBookResponse]])
 async def get_low_stock_products(
     current_user: Annotated[UserPayload, Depends(require_staff_or_admin)],
 ):

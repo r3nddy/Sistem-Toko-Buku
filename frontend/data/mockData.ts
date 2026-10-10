@@ -10,6 +10,8 @@ export interface Product {
   coverUrl: string;
   category: string;
   type: "book" | "stationery" | "lifestyle";
+  /** Stok nyata dari `books`. Hanya ada untuk produk yang berasal dari API. */
+  stock?: number;
 }
 
 export interface CategoryItem {

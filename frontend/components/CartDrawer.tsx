@@ -1,14 +1,38 @@
 "use client";
 
-import React from "react";
+import React, { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { useCart } from "@/context/CartContext";
 import { formatRupiah } from "@/components/ProductCard";
 
 export default function CartDrawer() {
-  const { items, removeFromCart, updateQuantity, totalPrice, totalItems, isCartOpen, setIsCartOpen, clearCart } =
-    useCart();
+  const router = useRouter();
+  const {
+    items,
+    removeFromCart,
+    updateQuantity,
+    totalPrice,
+    totalItems,
+    hasUnavailableItems,
+    loading,
+    error,
+    isCartOpen,
+    setIsCartOpen,
+    refresh,
+  } = useCart();
+
+  // Harga/stok bisa berubah di server; segarkan setiap drawer dibuka.
+  useEffect(() => {
+    if (isCartOpen) void refresh();
+  }, [isCartOpen, refresh]);
 
   if (!isCartOpen) return null;
+
+  const handleCheckout = () => {
+    if (items.length === 0 || hasUnavailableItems) return;
+    setIsCartOpen(false);
+    router.push("/checkout");
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end bg-black/50 backdrop-blur-xs animate-in fade-in duration-200">
@@ -47,12 +71,14 @@ export default function CartDrawer() {
             items.map((item) => (
               <div
                 key={item.id}
-                className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl border border-gray-100"
+                className={`flex items-center gap-3 p-3 rounded-xl border ${
+                  item.available ? "bg-gray-50 border-gray-100" : "bg-red-50/50 border-red-100"
+                }`}
               >
                 <div className="w-12 h-16 bg-white rounded-md overflow-hidden shrink-0 border border-gray-200 flex items-center justify-center">
-                  {item.coverUrl ? (
+                  {item.cover_url ? (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={item.coverUrl} alt={item.title} className="w-full h-full object-contain" />
+                    <img src={item.cover_url} alt={item.title} className="w-full h-full object-contain" />
                   ) : (
                     <span className="text-xs font-bold text-gray-400">📖</span>
                   )}
@@ -62,15 +88,26 @@ export default function CartDrawer() {
                   <h4 className="text-xs font-bold text-gray-800 truncate">{item.title}</h4>
                   <span className="text-[11px] text-gray-400 block">{item.author}</span>
                   <span className="text-xs font-extrabold text-[#0052cc] mt-1 block">
-                    {formatRupiah(item.price)}
+                    {formatRupiah(item.unit_price)}
                   </span>
+                  {item.available ? (
+                    item.stock <= 5 && (
+                      <span className="text-[10px] text-amber-600 font-semibold block">
+                        Sisa {item.stock} eksemplar
+                      </span>
+                    )
+                  ) : (
+                    <span className="text-[10px] text-red-600 font-semibold block">
+                      Stok tidak mencukupi (tersedia {item.stock})
+                    </span>
+                  )}
                 </div>
 
                 {/* Quantity Controls */}
                 <div className="flex flex-col items-end gap-2">
                   <button
                     type="button"
-                    onClick={() => removeFromCart(item.id)}
+                    onClick={() => void removeFromCart(item.id)}
                     className="text-[10px] text-red-500 hover:text-red-700 font-semibold"
                   >
                     Hapus
@@ -78,7 +115,7 @@ export default function CartDrawer() {
                   <div className="flex items-center border border-gray-200 rounded-md bg-white">
                     <button
                       type="button"
-                      onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                      onClick={() => void updateQuantity(item.id, item.quantity - 1)}
                       className="w-5 h-5 flex items-center justify-center text-xs text-gray-600 hover:bg-gray-100 font-bold"
                     >
                       -
@@ -86,8 +123,9 @@ export default function CartDrawer() {
                     <span className="w-6 text-center text-xs font-bold">{item.quantity}</span>
                     <button
                       type="button"
-                      onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                      className="w-5 h-5 flex items-center justify-center text-xs text-gray-600 hover:bg-gray-100 font-bold"
+                      onClick={() => void updateQuantity(item.id, item.quantity + 1)}
+                      disabled={item.quantity >= item.stock}
+                      className="w-5 h-5 flex items-center justify-center text-xs text-gray-600 hover:bg-gray-100 font-bold disabled:opacity-40 disabled:cursor-not-allowed"
                     >
                       +
                     </button>
@@ -105,14 +143,21 @@ export default function CartDrawer() {
               <span className="text-gray-500">Subtotal Belanja</span>
               <span className="font-extrabold text-base text-gray-900">{formatRupiah(totalPrice)}</span>
             </div>
+
+            {error && (
+              <p className="text-[11px] font-medium text-red-600">{error}</p>
+            )}
+            {hasUnavailableItems && (
+              <p className="text-[11px] font-medium text-red-600">
+                Ada buku yang stoknya tidak mencukupi. Sesuaikan jumlah atau hapus dulu.
+              </p>
+            )}
+
             <button
               type="button"
-              onClick={() => {
-                alert(`Pesanan berhasil disimulasikan untuk ${totalItems} buku. Total: ${formatRupiah(totalPrice)}`);
-                clearCart();
-                setIsCartOpen(false);
-              }}
-              className="w-full py-3 bg-[#0052cc] hover:bg-[#0041a8] text-white rounded-xl text-xs font-extrabold shadow-md transition-colors flex items-center justify-center gap-2"
+              onClick={handleCheckout}
+              disabled={hasUnavailableItems || loading}
+              className="w-full py-3 bg-[#0052cc] hover:bg-[#0041a8] disabled:opacity-60 disabled:cursor-not-allowed text-white rounded-xl text-xs font-extrabold shadow-md transition-colors flex items-center justify-center gap-2"
             >
               <span>Lanjutkan ke Pembayaran</span>
               <span>&rarr;</span>

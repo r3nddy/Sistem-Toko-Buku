@@ -1,20 +1,80 @@
 import { ProductCategory } from "@/types"
 import { initialProducts } from "@/data/products"
-import { initialOrders } from "@/data/orders"
-import { initialCustomers } from "@/data/customers"
-import { initialPromos } from "@/data/promos"
-import { Product, Order, Customer, Promo, KPICardData } from "@/types"
-import { getBooks } from "@/lib/api"
-import type { Book } from "@/lib/types"
+import { Product, Order, Customer, KPICardData, OrderStatus } from "@/types"
+import {
+  createPromo,
+  deletePromo,
+  getAccessToken,
+  getBooks,
+  getOrderDetail,
+  getOrders,
+  getPromos,
+  updateOrderStatus,
+  updatePromo,
+} from "@/lib/api"
+import type { Book, Order as ApiOrder, Promo, PromoInput, PromoUpdate } from "@/lib/types"
 import { createClient } from "@/lib/supabase"
 
 const supabase = createClient()
 
 // In-memory store untuk fallback & data non-buku
 let productsStore: Product[] = [...initialProducts]
-const ordersStore: Order[] = [...initialOrders]
-const customersStore: Customer[] = [...initialCustomers]
-let promosStore: Promo[] = [...initialPromos]
+
+// Status API (huruf kecil) -> label admin yang sudah dipakai UI. Nilai API
+// mengikuti CHECK constraint database live (`orders_status_check`), jadi
+// "processing"/"cancelled", bukan "diproses"/"dibatalkan".
+const API_TO_ADMIN_STATUS: Record<string, OrderStatus> = {
+  pending: "Menunggu Pembayaran",
+  paid: "Dibayar",
+  processing: "Diproses",
+  shipped: "Dikirim",
+  completed: "Selesai",
+  cancelled: "Batal",
+  expired: "Kedaluwarsa",
+}
+
+const ADMIN_TO_API_STATUS: Record<OrderStatus, string> = {
+  "Menunggu Pembayaran": "pending",
+  Dibayar: "paid",
+  Diproses: "processing",
+  Dikirim: "shipped",
+  Selesai: "completed",
+  Batal: "cancelled",
+  Kedaluwarsa: "expired",
+}
+
+function toAdminOrder(order: ApiOrder): Order {
+  return {
+    id: order.id,
+    orderNumber: order.order_number,
+    customerId: order.user_id ?? "",
+    customerName: order.customer_name ?? "-",
+    customerEmail: order.customer_email ?? "",
+    customerPhone: order.customer_phone ?? "",
+    shippingAddress: order.shipping_address,
+    courier: [order.courier, order.courier_service].filter(Boolean).join(" - "),
+    trackingNumber: order.tracking_number ?? undefined,
+    paymentMethod: (order.payment_method ?? "-") as Order["paymentMethod"],
+    items: order.items.map((item) => ({
+      productId: item.book_id,
+      productTitle: item.title ?? "-",
+      coverUrl: item.cover_url ?? "",
+      unitPrice: item.unit_price,
+      quantity: item.quantity,
+      subtotal: item.total_price,
+    })),
+    subtotal: order.subtotal,
+    shippingFee: order.shipping_fee,
+    discountAmount: order.discount_amount,
+    totalAmount: order.total_amount,
+    status: API_TO_ADMIN_STATUS[order.status] ?? "Menunggu Pembayaran",
+    createdAt: order.created_at,
+    // Riwayat status tidak disimpan di skema live; timeline diisi satu entri.
+    timeline: [
+      { status: API_TO_ADMIN_STATUS[order.status] ?? "Menunggu Pembayaran", timestamp: order.created_at, description: "Status pesanan saat ini" },
+    ],
+  }
+}
 
 export interface SalesDataItem {
   date: string
@@ -224,68 +284,83 @@ export const productService = {
   },
 }
 
-// Order Service
+// Order Service - Connected to Backend API
 export const orderService = {
   getAll: async (): Promise<Order[]> => {
-    return [...ordersStore]
+    const token = await getAccessToken()
+    if (!token) return []
+    const res = await getOrders(token, 1, 100)
+    return res.data.map(toAdminOrder)
   },
   getById: async (id: string): Promise<Order | undefined> => {
-    return ordersStore.find((o) => o.id === id || o.orderNumber === id)
+    const token = await getAccessToken()
+    if (!token) return undefined
+    const res = await getOrderDetail(id, token)
+    return toAdminOrder(res.data)
   },
-  updateStatus: async (id: string, status: Order["status"], note?: string): Promise<Order> => {
-    const index = ordersStore.findIndex((o) => o.id === id)
-    if (index === -1) throw new Error("Pesanan tidak ditemukan")
-    const existing = ordersStore[index]
-    const timelineEntry = {
-      status,
-      timestamp: new Date().toISOString(),
-      description: note || `Status diubah menjadi ${status}`,
-    }
-    const updated: Order = {
-      ...existing,
-      status,
-      timeline: [timelineEntry, ...existing.timeline],
-    }
-    ordersStore[index] = updated
-    return updated
+  updateStatus: async (id: string, status: OrderStatus, note?: string): Promise<Order> => {
+    // Skema live tidak punya kolom catatan pada `orders`.
+    void note
+    const token = await getAccessToken()
+    if (!token) throw new Error("Sesi login tidak ditemukan.")
+    await updateOrderStatus(id, ADMIN_TO_API_STATUS[status] as never, token)
+    const refreshed = await orderService.getById(id)
+    if (!refreshed) throw new Error("Pesanan tidak ditemukan")
+    return refreshed
   },
 }
 
-// Customer Service
+// Pelanggan tidak punya tabelnya sendiri di skema live; ringkasan pemesan
+// diturunkan dari pesanan yang masuk.
 export const customerService = {
   getAll: async (): Promise<Customer[]> => {
-    return [...customersStore]
+    const orders = await orderService.getAll()
+    const byEmail = new Map<string, Customer>()
+    for (const order of orders) {
+      const key = order.customerEmail || order.customerId
+      const existing = byEmail.get(key)
+      if (existing) {
+        existing.totalOrders += 1
+        existing.totalSpent += order.totalAmount
+        continue
+      }
+      byEmail.set(key, {
+        id: order.customerId,
+        name: order.customerName,
+        email: order.customerEmail,
+        phone: order.customerPhone,
+        city: "-",
+        totalOrders: 1,
+        totalSpent: order.totalAmount,
+        joinedAt: order.createdAt,
+        status: "Aktif",
+      })
+    }
+    return [...byEmail.values()]
   },
   getById: async (id: string): Promise<Customer | undefined> => {
-    return customersStore.find((c) => c.id === id)
+    return (await customerService.getAll()).find((c) => c.id === id)
   },
 }
 
-// Promo Service
+// Promo Service — membaca tabel `promos` di Supabase lewat backend.
+// Status promo dihitung server (`is_active` + rentang tanggal), jadi tidak ada
+// kolom status yang bisa basi seperti versi mock sebelumnya.
 export const promoService = {
   getAll: async (): Promise<Promo[]> => {
-    return [...promosStore]
+    return getPromos()
   },
-  toggleActive: async (id: string): Promise<Promo> => {
-    const index = promosStore.findIndex((p) => p.id === id)
-    if (index === -1) throw new Error("Promo tidak ditemukan")
-    const existing = promosStore[index]
-    const updated: Promo = {
-      ...existing,
-      isActive: !existing.isActive,
-      status: !existing.isActive ? "Aktif" : "Kadaluarsa",
-    }
-    promosStore[index] = updated
-    return updated
+  create: async (data: PromoInput): Promise<Promo> => {
+    return createPromo(data)
   },
-  create: async (data: Omit<Promo, "id" | "usedCount">): Promise<Promo> => {
-    const newPromo: Promo = {
-      ...data,
-      id: `prm-${Date.now()}`,
-      usedCount: 0,
-    }
-    promosStore = [newPromo, ...promosStore]
-    return newPromo
+  update: async (id: string, data: PromoUpdate): Promise<Promo> => {
+    return updatePromo(id, data)
+  },
+  toggleActive: async (id: string, isActive: boolean): Promise<Promo> => {
+    return updatePromo(id, { is_active: isActive })
+  },
+  delete: async (id: string): Promise<void> => {
+    return deletePromo(id)
   },
 }
 
@@ -304,7 +379,38 @@ export const analyticsService = {
       // Calculate total catalog inventory value
       const totalInventoryVal = allBooks.reduce((acc, b) => acc + (b.normalPrice * b.stock), 0)
 
+      // Pesanan nyata dari API; tidak ada lagi angka mock di kartu pesanan.
+      const realOrders = await orderService.getAll()
+      const revenue = realOrders
+        .filter((o) => o.status !== "Batal")
+        .reduce((acc, o) => acc + o.totalAmount, 0)
+      const newOrders = realOrders.filter((o) => o.status === "Menunggu Pembayaran" || o.status === "Diproses").length
+
       return [
+        {
+          title: "Total Pendapatan",
+          value: new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(revenue),
+          rawNumeric: revenue,
+          trendPercent: 0,
+          isPositive: true,
+          description: `${realOrders.length} pesanan tercatat`,
+        },
+        {
+          title: "Pesanan Baru",
+          value: `+${newOrders}`,
+          rawNumeric: newOrders,
+          trendPercent: 0,
+          isPositive: true,
+          description: "Menunggu pembayaran atau diproses",
+        },
+        {
+          title: "Pelanggan Aktif",
+          value: `${new Set(realOrders.map((o) => o.customerEmail)).size}`,
+          rawNumeric: new Set(realOrders.map((o) => o.customerEmail)).size,
+          trendPercent: 0,
+          isPositive: true,
+          description: "Pemesan unik di pesanan tercatat",
+        },
         {
           title: "Total Judul Buku",
           value: totalBooks.toString(),
@@ -339,44 +445,39 @@ export const analyticsService = {
         },
       ]
     } catch {
-      const totalRevenue = ordersStore
-        .filter((o) => o.status === "Selesai" || o.status === "Dikirim")
-        .reduce((acc, o) => acc + o.totalAmount, 0)
-      const newOrders = ordersStore.filter((o) => o.status === "Diproses" || o.status === "Menunggu Pembayaran").length
-      const activeCustomers = customersStore.filter((c) => c.status === "Aktif").length
-
+      // Fallback tanpa angka mock: nilai nol lebih jujur daripada data palsu.
       return [
         {
           title: "Total Pendapatan",
-          value: new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(totalRevenue),
-          rawNumeric: totalRevenue,
-          trendPercent: 12.5,
+          value: new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(0),
+          rawNumeric: 0,
+          trendPercent: 0,
           isPositive: true,
-          description: "+12,5% dari bulan lalu",
+          description: "Gagal memuat data pesanan",
         },
         {
           title: "Pesanan Baru",
-          value: `+${newOrders}`,
-          rawNumeric: newOrders,
-          trendPercent: 8.2,
+          value: "+0",
+          rawNumeric: 0,
+          trendPercent: 0,
           isPositive: true,
-          description: "+8,2% minggu ini",
+          description: "Gagal memuat data pesanan",
         },
         {
           title: "Pelanggan Aktif",
-          value: activeCustomers.toString(),
-          rawNumeric: activeCustomers,
-          trendPercent: 4.3,
+          value: "0",
+          rawNumeric: 0,
+          trendPercent: 0,
           isPositive: true,
-          description: "+18 akun baru terdaftar",
+          description: "Gagal memuat data pesanan",
         },
         {
           title: "Rasio Pertumbuhan",
-          value: "+18,4%",
-          rawNumeric: 18.4,
-          trendPercent: 2.1,
+          value: "0%",
+          rawNumeric: 0,
+          trendPercent: 0,
           isPositive: true,
-          description: "+2,1% di atas target Q4",
+          description: "Gagal memuat data pesanan",
         },
       ]
     }

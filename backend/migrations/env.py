@@ -10,7 +10,7 @@ from app.core.config import settings
 from app.db.base import Base
 from app import models
 
-_ = models.Book, models.Profile
+_ = models.Book, models.Profile, models.Promo
 
 config = context.config
 config.set_main_option("sqlalchemy.url", settings.database_url.replace("%", "%%"))

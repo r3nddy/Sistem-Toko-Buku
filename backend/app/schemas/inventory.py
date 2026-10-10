@@ -25,3 +25,13 @@ class StockMovementResponse(BaseModel):
     created_by: Optional[str] = None
     created_at: str | datetime
     product_title: Optional[str] = None
+
+
+class LowStockBookResponse(BaseModel):
+    """Buku dengan stok kritis — kolom yang memang ada di tabel `books`."""
+
+    id: str
+    title: str
+    author: Optional[str] = None
+    stock: int
+    cover_url: Optional[str] = None

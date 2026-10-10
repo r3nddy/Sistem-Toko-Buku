@@ -1,38 +1,75 @@
-from typing import Optional, Literal
-from pydantic import BaseModel, Field
-from datetime import datetime
+from datetime import date
+from typing import Literal, Optional
+
+from pydantic import BaseModel, Field, model_validator
+
+DiscountType = Literal["Persentase", "Potongan Tetap", "Gratis Ongkir"]
+
+# Diturunkan dari `is_active` + rentang tanggal, bukan kolom tersimpan — status
+# yang disimpan bisa basi (lihat `orders.expires_at` di AUDIT poin 5).
+PromoStatus = Literal["Aktif", "Jadwal", "Kadaluarsa", "Nonaktif"]
 
 
 class PromoBase(BaseModel):
-    code: str = Field(..., min_length=3, description="Kode voucher promo")
-    title: str = Field(..., min_length=3, description="Judul voucher promo")
-    discount_type: Literal["Persentase", "Nominal"] = Field(default="Persentase")
-    discount_value: float = Field(..., gt=0, description="Nilai diskon (% atau Rp)")
-    min_purchase: float = Field(default=0, ge=0, description="Minimal total belanja")
-    max_discount: Optional[float] = Field(None, ge=0, description="Maksimal potongan diskon")
-    quota: int = Field(default=100, ge=1, description="Kuota penggunaan voucher")
-    status: Literal["Aktif", "Nonaktif", "Dijadwalkan"] = Field(default="Aktif")
-    start_date: str | datetime
-    end_date: str | datetime
+    code: str = Field(..., min_length=3, max_length=32, description="Kode voucher yang diketik pelanggan")
+    name: str = Field(..., min_length=3, max_length=255)
+    discount_type: DiscountType
+    discount_value: float = Field(..., gt=0, description="Persen bila 'Persentase', nominal rupiah bila lainnya")
+    min_purchase: float = Field(default=0, ge=0)
+    max_discount: Optional[float] = Field(default=None, gt=0)
+    quota: int = Field(default=100, gt=0)
+    is_active: bool = True
+    start_date: date
+    end_date: date
+
+    @model_validator(mode="after")
+    def _check(self) -> "PromoBase":
+        # Cerminan CHECK constraint `ck_promos_date_range` supaya pesan errornya
+        # rapi (422), bukan 500 dari PostgREST.
+        if self.end_date < self.start_date:
+            raise ValueError("Tanggal berakhir tidak boleh lebih awal dari tanggal mulai.")
+        if self.discount_type == "Persentase" and self.discount_value > 100:
+            raise ValueError("Diskon persentase tidak boleh lebih dari 100%.")
+        return self
 
 
 class PromoCreate(PromoBase):
-    pass
+    """Payload pembuatan promo; `code` akan dirapikan jadi huruf besar."""
+
+    @model_validator(mode="after")
+    def _normalize(self) -> "PromoCreate":
+        self.code = self.code.strip().upper()
+        return self
 
 
 class PromoUpdate(BaseModel):
-    title: Optional[str] = None
-    discount_type: Optional[Literal["Persentase", "Nominal"]] = None
-    discount_value: Optional[float] = Field(None, gt=0)
-    min_purchase: Optional[float] = Field(None, ge=0)
-    max_discount: Optional[float] = Field(None, ge=0)
-    quota: Optional[int] = Field(None, ge=1)
-    status: Optional[Literal["Aktif", "Nonaktif", "Dijadwalkan"]] = None
-    start_date: Optional[str | datetime] = None
-    end_date: Optional[str | datetime] = None
+    """Patch parsial; hanya field yang dikirim yang diubah."""
+
+    name: Optional[str] = Field(default=None, min_length=3, max_length=255)
+    discount_type: Optional[DiscountType] = None
+    discount_value: Optional[float] = Field(default=None, gt=0)
+    min_purchase: Optional[float] = Field(default=None, ge=0)
+    max_discount: Optional[float] = Field(default=None, gt=0)
+    quota: Optional[int] = Field(default=None, gt=0)
+    is_active: Optional[bool] = None
+    start_date: Optional[date] = None
+    end_date: Optional[date] = None
 
 
-class PromoResponse(PromoBase):
+class PromoResponse(BaseModel):
     id: str
+    code: str
+    name: str
+    discount_type: DiscountType
+    discount_value: float
+    min_purchase: float
+    max_discount: Optional[float] = None
+    quota: int
     used_count: int
-    created_at: str | datetime
+    is_active: bool
+    # Dihitung server dari `is_active` + rentang tanggal; tidak pernah dikirim client.
+    status: PromoStatus
+    start_date: date
+    end_date: date
+    created_at: Optional[str] = None
+    updated_at: Optional[str] = None

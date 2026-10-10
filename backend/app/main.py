@@ -4,13 +4,12 @@ from app.core.config import settings
 from app.api.v1 import (
     auth,
     books,
-    products,
+    cart,
     categories,
     orders,
     inventory,
     dashboard,
     promos,
-    customers,
     uploads,
 )
 
@@ -31,13 +30,13 @@ app.add_middleware(
 
 app.include_router(auth.router, prefix=settings.API_V1_PREFIX)
 app.include_router(books.router, prefix=settings.API_V1_PREFIX)
-app.include_router(products.router, prefix=settings.API_V1_PREFIX)
 app.include_router(categories.router, prefix=settings.API_V1_PREFIX)
 app.include_router(orders.router, prefix=settings.API_V1_PREFIX)
+app.include_router(orders.shipping_router, prefix=settings.API_V1_PREFIX)
+app.include_router(cart.router, prefix=settings.API_V1_PREFIX)
 app.include_router(inventory.router, prefix=settings.API_V1_PREFIX)
 app.include_router(dashboard.router, prefix=settings.API_V1_PREFIX)
 app.include_router(promos.router, prefix=settings.API_V1_PREFIX)
-app.include_router(customers.router, prefix=settings.API_V1_PREFIX)
 app.include_router(uploads.router, prefix=settings.API_V1_PREFIX)
 
 

@@ -10,7 +10,11 @@ import AuthLayout from "@/components/auth/AuthLayout";
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirectTo = searchParams.get("redirect") || "/admin/books";
+  // Only accept internal paths so a crafted ?redirect= cannot send users off-site.
+  const redirectParam = searchParams.get("redirect");
+  const redirectTo = redirectParam && redirectParam.startsWith("/") && !redirectParam.startsWith("//")
+    ? redirectParam
+    : "/admin/books";
   const { session, loading: authLoading, signIn, signInWithOAuth } = useAuth();
 
   const [email, setEmail] = useState("");

@@ -1,5 +1,6 @@
 import React from "react"
-import { OrderStatus, ProductStatus, PromoStatus } from "@/types"
+import { OrderStatus, ProductStatus } from "@/types"
+import type { PromoStatus } from "@/lib/types"
 
 export function OrderStatusBadge({ status }: { status: OrderStatus }) {
   switch (status) {
@@ -7,6 +8,12 @@ export function OrderStatusBadge({ status }: { status: OrderStatus }) {
       return (
         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800 border border-amber-200">
           Menunggu Pembayaran
+        </span>
+      )
+    case "Dibayar":
+      return (
+        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-sky-100 text-sky-800 border border-sky-200">
+          Dibayar
         </span>
       )
     case "Diproses":
@@ -31,6 +38,12 @@ export function OrderStatusBadge({ status }: { status: OrderStatus }) {
       return (
         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-rose-100 text-rose-800 border border-rose-200">
           Batal
+        </span>
+      )
+    case "Kedaluwarsa":
+      return (
+        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-700 border border-slate-200">
+          Kedaluwarsa
         </span>
       )
     default:
@@ -104,6 +117,12 @@ export function PromoStatusBadge({ status }: { status: PromoStatus }) {
       return (
         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-600 border border-slate-200">
           Kadaluarsa
+        </span>
+      )
+    case "Nonaktif":
+      return (
+        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-500 border border-slate-200">
+          Nonaktif
         </span>
       )
   }

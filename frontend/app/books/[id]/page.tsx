@@ -94,25 +94,31 @@ export default function BookDetailPage() {
   const price = typeof book.price === "number" ? book.price : parseFloat(book.price) || 85000;
   const isOutOfStock = book.stock <= 0;
 
-  const handleAddToCart = () => {
+  const handleAddToCart = async () => {
     if (isOutOfStock) return;
-    addToCart(
-      {
-        id: book.id,
-        title: book.title,
-        author: book.author,
-        price,
-        coverUrl: book.cover_url || "",
-        stock: book.stock,
-      },
-      quantity
-    );
+    try {
+      await addToCart(
+        {
+          id: book.id,
+          title: book.title,
+          author: book.author,
+          price,
+          coverUrl: book.cover_url || "",
+          stock: book.stock,
+        },
+        quantity
+      );
+      return true;
+    } catch {
+      // Pesan error ditampilkan oleh halaman/drawer lewat state `error` di context.
+      return false;
+    }
   };
 
-  const handleBuyNow = () => {
+  const handleBuyNow = async () => {
     if (isOutOfStock) return;
-    handleAddToCart();
-    setIsCartOpen(true);
+    const added = await handleAddToCart();
+    if (added) setIsCartOpen(true);
   };
 
   return (
@@ -258,7 +264,7 @@ export default function BookDetailPage() {
               <div className="flex items-center gap-3 w-full sm:flex-1">
                 <button
                   type="button"
-                  onClick={handleAddToCart}
+                  onClick={() => void handleAddToCart()}
                   disabled={isOutOfStock}
                   className="flex-1 py-3 px-4 rounded-xl border-2 border-[#0052cc] text-[#0052cc] hover:bg-blue-50 text-xs md:text-sm font-extrabold transition-colors disabled:opacity-50"
                 >
@@ -266,7 +272,7 @@ export default function BookDetailPage() {
                 </button>
                 <button
                   type="button"
-                  onClick={handleBuyNow}
+                  onClick={() => void handleBuyNow()}
                   disabled={isOutOfStock}
                   className="flex-1 py-3 px-4 rounded-xl bg-[#0052cc] hover:bg-[#0041a8] text-white text-xs md:text-sm font-extrabold shadow-md hover:shadow-lg transition-all disabled:opacity-50"
                 >
