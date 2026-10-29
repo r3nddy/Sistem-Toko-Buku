@@ -80,7 +80,7 @@ def status_view(payment: dict[str, Any], proof_status: str | None = None) -> Pay
 
 
 def _is_payment_migration_missing(error: Exception) -> bool:
-    """Kolom `current_proof_id` belum ada → migrasi `20261024_13` belum dijalankan."""
+    """Kolom `current_proof_id` tidak ada → migrasi `20261024_13` belum ada di DB ini."""
     text = str(error)
     return "current_proof_id" in text and ("42703" in text or "does not exist" in text)
 

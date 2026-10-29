@@ -28,8 +28,9 @@ export const siteConfig = {
     discord: "https://discord.gg/KJW3aHGVZ",
     github: "https://github.com/r3nddy/Sistem-Toko-Buku",
   },
-  // Hanya tautan yang punya halaman ("Lacak Pesanan"). "Tentang Kami" dan
-  // "Bantuan & FAQ" belum punya halaman, jadi tidak dipasang sebagai `#`.
+  // Hanya tautan yang punya halaman (jangan pasang `#`). Halaman Bantuan
+  // memang ada di `/support`, tetapi tidak ditampilkan di sini — footer dan
+  // `DocumentShell` sudah menautkannya. "Tentang Kami" belum punya halaman.
   topBarLinks: [
     { label: "Lacak Pesanan", href: "/orders" },
   ],
