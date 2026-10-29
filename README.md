@@ -13,8 +13,8 @@ ulasan, Book Community, Book Rewards, dan AI Book Advisor) dengan portal admin.
 
 </div>
 
-> **[Fakta]** Nama produk di UI dan kode adalah **Readr** (`frontend/config/site.ts`,
-> `frontend/app/layout.tsx`). Frasa "Sistem Toko Buku" dipakai sebagai nama repositori.
+Nama yang tampil di aplikasi adalah **Readr** (`frontend/config/site.ts`); nama
+repositorinya Sistem Toko Buku.
 
 ---
 
@@ -50,7 +50,7 @@ Data disimpan di **Supabase (PostgreSQL)**. Autentikasi memakai **Supabase Auth*
 frontend mengirim token Bearer ke backend, dan peran (`user` / `admin`) hanya
 dibaca dari kolom `profiles.role` — nilai `role` di metadata token tidak dipercaya.
 
-**[Fakta]** Backend memakai **dua jalur akses data**: SQLAlchemy ORM untuk
+Backend memakai **dua jalur akses data**: SQLAlchemy ORM untuk
 `books`, `community`, `reviews`, `marketplaces`, dan `advisor`; PostgREST
 (`supabase_admin` / `supabase_anon`) untuk kategori, promo, keranjang, pesanan, stok,
 dashboard, pembayaran, dan rewards. Rinciannya di
@@ -92,7 +92,7 @@ flowchart LR
 > di-commit**. Selama penghapusan itu belum di-commit, tautan di atas masih
 > berlaku di branch ini; di `main` keduanya masih ada.
 
-> **[Fakta]** Pola `docs` di `.gitignore` root juga meng-ignore **setiap** folder
+> **[Catatan]** Pola `docs` di `.gitignore` root juga meng-ignore **setiap** folder
 > bernama `docs` di mana pun, termasuk `backend/docs/` — sehingga dokumen di
 > [`backend/docs/packages/`](backend/docs/packages/README.md) ada di mesin lokal
 > tetapi **tidak akan muncul di GitHub** sampai aturan itu dipersempit
