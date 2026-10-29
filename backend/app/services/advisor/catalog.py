@@ -1,10 +1,11 @@
 """Pembacaan kandidat dari katalog aktual (`books` + `categories`).
 
 Satu-satunya tempat fitur ini menyentuh database. Kueri sengaja memakai SQL
-eksplisit, bukan model ORM `Book`: tabel live punya kolom `category_id` dan
-`weight_gram` yang belum ada di model/migrasi repo, sedangkan fitur ini hanya
-butuh baca. Dengan SQL eksplisit, tidak ada perubahan model yang memaksa
-migrasi baru — dan kolom yang tidak dipakai tidak ikut terambil.
+eksplisit, bukan model ORM `Book`: tabel live punya kolom (mis. `category_id` di
+`books`, dan join ke `categories`) yang tidak dipetakan di model repo — model
+memang hanya mencakup sebagian skema — sedangkan fitur ini hanya butuh baca.
+Dengan SQL eksplisit, tidak ada perubahan model yang memaksa migrasi baru — dan
+kolom yang tidak dipakai tidak ikut terambil.
 
 Syarat wajib pengguna (anggaran, stok, buku yang tidak disukai) diterapkan di
 `WHERE`, bukan setelah ranking: batas wajib tidak boleh dilanggar hanya karena

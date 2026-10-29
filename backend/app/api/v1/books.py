@@ -1,9 +1,11 @@
 """Endpoint katalog buku.
 
 Menangani CRUD buku untuk admin, pembacaan katalog publik, dan pembuatan
-ulasan AI. Modul ini adalah **satu-satunya** tempat backend memakai SQLAlchemy
-untuk tulis (`app.db.session`); modul lain membaca lewat klien Supabase di
-`app.core.supabase`.
+ulasan AI. Modul ini adalah tempat utama backend menulis lewat SQLAlchemy
+(`app.db.session`); modul lain yang memakai jalur ORM (community, reviews,
+marketplaces, ai, book_advisor) menulis lewat repository masing-masing dengan
+sesi per-permintaan dari `get_db`. Sisa fitur membaca/menulis lewat klien
+Supabase di `app.core.supabase` (PostgREST).
 
 Catatan penting soal dua jalur data:
 

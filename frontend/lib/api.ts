@@ -87,8 +87,8 @@ const DEFAULT_TIMEOUT_MS = 45_000;
  * Gangguan jaringan/CORS sebelum balasan diterima — `fetch` melempar `TypeError`.
  *
  * Dibedakan dari timeout (`TimeoutError`) dan abort pemanggil (`AbortError`)
- * karena hanya jenis ini yang layak dicoba ulang otomatis: instance yang baru
- * bangun (Render free plan) sempat menolak koneksi sebelum aplikasi siap.
+ * karena hanya jenis ini yang layak dicoba ulang otomatis: koneksi bisa ditolak
+ * seketika sebelum proses backend siap menerima (lihat `RETRY_DELAYS_MS`).
  */
 export class NetworkError extends Error {
   constructor(message: string) {
@@ -100,9 +100,9 @@ export class NetworkError extends Error {
 /**
  * Jeda sebelum percobaan ulang; indeks = percobaan yang baru gagal.
  *
- * Instance gratis yang tidur butuh ~30–50 dtk untuk bangun, dan selama itu
- * koneksi ditolak seketika — jeda pendek hanya mengulang penolakan yang sama.
- * Total tunggu di sini ≈ 32 dtk, masih di bawah batas waktu permintaan.
+ * Selama backend belum siap menerima koneksi, penolakan terjadi seketika —
+ * jeda pendek hanya mengulang penolakan yang sama, jadi jeda dibuat makin
+ * panjang. Total tunggu di sini ≈ 32 dtk, masih di bawah `DEFAULT_TIMEOUT_MS`.
  */
 const RETRY_DELAYS_MS: readonly number[] = [2_000, 5_000, 10_000, 15_000];
 /** `Error` dengan nama `AbortError` — dibedakan pemanggil untuk pesan "dibatalkan". */

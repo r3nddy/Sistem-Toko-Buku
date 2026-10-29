@@ -4,8 +4,18 @@ Menyediakan `get_db`, dependency FastAPI yang memberi tepat satu `AsyncSession`
 per permintaan. Sesi ditutup otomatis saat blok `async with` selesai, termasuk
 ketika request gagal di tengah jalan.
 
-Jalur ini hanya dipakai endpoint `books`; modul lain mengakses Supabase lewat
-PostgREST di `app.core.supabase`.
+Pembagian dua jalur data (lihat juga `app/db/__init__.py`):
+
+- **Jalur ORM (`get_db`)** — dipakai `books`, `community`, `reviews`,
+  `marketplaces`, `ai`, dan `book_advisor`, serta repository ORM yang mereka
+  susun (`OrmBookRepository`, `OrmGroupRepository`/`OrmMemberRepository`/
+  `OrmMessageRepository`, `OrmReviewRepository`, `OrmMarketplaceSourceRepository`/
+  `OrmMarketplacePriceRepository`, `SqlAdvisorCatalog`). Dipakai untuk fitur
+  yang butuh transaksi/beberapa tabel dalam satu commit.
+- **Jalur PostgREST (`app.core.supabase`)** — dipakai service CRUD sederhana
+  dan laporan (`category_service`, `promo_service`, `cart_service`,
+  `order_service`, `inventory_service`, `dashboard_service`, `payment_service`)
+  yang membaca/menulis satu tabel tanpa model ORM.
 
 Pool dipakai dengan sengaja: database Supabase jarak jauh, dan membuka koneksi
 baru (TLS + auth) jauh lebih mahal daripada satu query. `pool_pre_ping` mengganti

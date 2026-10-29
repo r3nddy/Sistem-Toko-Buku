@@ -9,9 +9,11 @@ Book Community (`ChatGroup`, `ChatGroupMember`, `ChatMessage`,
 `AIReviewGeneration`).
 
 Sebagian besar tabel lain yang dipakai aplikasi (`orders`, `order_items`,
-`payments`, `carts`, `cart_items`, `categories`) dibaca lewat PostgREST di
-`app.core.supabase` dan karena itu **tidak** punya model di sini. Jadi daftar
-model ini sengaja tidak mencerminkan seluruh skema database.
+`payments`, `payment_proofs`, `payment_audit_logs`, `carts`, `cart_items`)
+dibaca lewat PostgREST di `app.core.supabase` dan karena itu **tidak** punya
+model di sini. `categories` dibaca lewat PostgREST di `app/services/category_service.py`
+dan lewat SQL eksplisit di `app/services/advisor/catalog.py`. Jadi daftar model
+ini sengaja tidak mencerminkan seluruh skema database.
 """
 
 from app.models.book import Book

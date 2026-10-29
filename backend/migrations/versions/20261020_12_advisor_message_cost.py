@@ -17,9 +17,10 @@ Tidak ada tabel/kolom baru. Idempotensi memakai `idempotency_key` unik yang
 sudah ada (`advisor:<message_id>:charge`), sehingga satu pesan hanya ditagih
 sekali walau request diulang.
 
-Catatan: migrasi ini **belum** diterapkan ke database live. Kode memakai nilai
-default 10 dari `rule_catalog` bila baris aturan belum ada, tetapi tagihan
-ledger dengan tipe `ai_chat_charge` memerlukan migrasi ini.
+Catatan: dokumen ini ditulis sebelum penerapan; migrasi ini sudah diterapkan ke
+database live bersama revisi berikutnya. Kode memakai nilai default 10 dari
+`rule_catalog` bila baris aturan belum ada, tetapi tagihan ledger dengan tipe
+`ai_chat_charge` memerlukan migrasi ini.
 """
 
 from __future__ import annotations
