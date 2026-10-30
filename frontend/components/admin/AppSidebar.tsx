@@ -18,12 +18,13 @@ import {
   User,
   PanelLeftClose,
   PanelLeftOpen,
-  Library,
   Link2,
   Coins,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { siteConfig } from "@/config/site"
+import ReadrLogo from "@/components/ReadrLogo"
+import SignOutDialog from "@/components/SignOutDialog"
 import { useAuth } from "@/components/AuthProvider"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
@@ -110,14 +111,20 @@ export function AppSidebar({
   const adminEmail = session?.user.email ?? ""
   const adminRole = "Administrator"
 
-  const handleSignOut = async () => {
+  const handleSignOut = async (): Promise<boolean> => {
     try {
       await signOut()
       router.replace("/login")
+      return true
     } catch (error) {
       console.error("Gagal keluar", error)
+      return false
     }
   }
+
+  // State dialog konfirmasi keluar — dideklarasikan setelah semua hook lain
+  // agar urutannya tetap sama antar render.
+  const [signOutOpen, setSignOutOpen] = React.useState(false)
 
   // Tanda aktif hanya untuk halaman itu sendiri, bukan `#anchor` di halaman
   // yang sama — dua menu dengan path sama akan tampak aktif bersamaan.
@@ -128,24 +135,20 @@ export function AppSidebar({
       {/* Header Logo */}
       <div>
         <div className="flex h-16 items-center justify-between px-4 border-b border-zinc-200/80">
-          <Link
+          {/* Tanda & wordmark memakai ReadrLogo yang sama dengan header toko,
+              bukan lagi kotak gelap + ikon Library, supaya identitas admin
+              dan landing page satu keluarga. */}
+          <ReadrLogo
             href="/admin/dashboard"
-            className="flex items-center gap-2.5 shrink-0 font-bold text-zinc-900"
-          >
-            <div className="w-9 h-9 rounded-xl bg-zinc-900 flex items-center justify-center text-white font-bold text-base shadow-xs">
-              <Library className="h-4.5 w-4.5 text-zinc-100" />
-            </div>
-            {!collapsed && (
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-bold tracking-tight text-zinc-900">
-                  {siteConfig.brandName}
-                </span>
-                <span className="rounded-md bg-blue-500/10 text-blue-600 border border-blue-500/20 text-[10px] font-bold px-1.5 py-0.5 tracking-wider uppercase">
-                  PRO
-                </span>
-              </div>
-            )}
-          </Link>
+            size="md"
+            showText={!collapsed}
+            className="min-w-0"
+          />
+          {!collapsed && (
+            <span className="shrink-0 rounded-md bg-blue-500/10 text-blue-600 border border-blue-500/20 text-[10px] font-bold px-1.5 py-0.5 tracking-wider uppercase">
+              PRO
+            </span>
+          )}
           <button
             onClick={onToggleCollapse}
             className="hidden md:flex h-7 w-7 items-center justify-center rounded-lg text-zinc-400 hover:bg-zinc-100 hover:text-zinc-900 cursor-pointer transition-colors"
@@ -271,7 +274,7 @@ export function AppSidebar({
             <DropdownMenuSeparator className="bg-zinc-100" />
             <DropdownMenuItem
               className="text-xs cursor-pointer text-rose-600 focus:text-rose-600 focus:bg-rose-50 rounded-lg"
-              onClick={handleSignOut}
+              onSelect={() => setSignOutOpen(true)}
             >
               <LogOut className="h-4 w-4 mr-2 text-rose-500" />
               <span>Keluar</span>
@@ -279,6 +282,15 @@ export function AppSidebar({
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
+
+      {/* Di luar menu: konten dropdown ter-mount ulang saat tertutup. */}
+      <SignOutDialog
+        open={signOutOpen}
+        onOpenChange={setSignOutOpen}
+        onSignOut={handleSignOut}
+        audience="admin"
+        tone="admin"
+      />
     </div>
   )
 
