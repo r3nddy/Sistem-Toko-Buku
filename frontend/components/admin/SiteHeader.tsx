@@ -5,7 +5,6 @@ import { Menu, Search, Bell, Store } from "lucide-react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { AdminBreadcrumb } from "@/components/admin/AdminBreadcrumb"
-import { ThemeToggle } from "@/components/admin/ThemeToggle"
 import { CommandSearchDialog } from "@/components/admin/CommandSearchDialog"
 import {
   DropdownMenu,
@@ -98,9 +97,6 @@ export function SiteHeader({ onToggleMobileMenu }: SiteHeaderProps) {
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-
-          {/* Theme Toggle */}
-          <ThemeToggle />
 
           {/* View Public Storefront */}
           <Button
